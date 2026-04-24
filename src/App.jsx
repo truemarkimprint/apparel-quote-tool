@@ -457,8 +457,17 @@ export default function App() {
             }}
           >
             <div>
-              <h1 style={{ display: "flex", alignItems: "center", gap: 12, margin: 0, fontSize: 34 }}>
-                <Shirt size={32} /> DTF Apparel Quote Tool
+              <h1
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    margin: 0,
+    fontSize: 34,
+    color: "#0f172a",
+  }}
+>
+                <Shirt size={32} color="#0f172a" /> TrueMark Quote Tool
               </h1>
               <p style={{ color: "#475569", marginTop: 8 }}>
                 Fast DTF apparel pricing with branded garment presets, size-specific upcharges, and customer-facing quote output.
