@@ -78,6 +78,7 @@ const buttonStyle = {
   borderRadius: 12,
   border: "1px solid #cbd5e1",
   background: "white",
+  color: "#0f172a",
   cursor: "pointer",
   fontWeight: 600,
 };
