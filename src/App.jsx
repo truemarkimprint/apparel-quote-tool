@@ -12,6 +12,7 @@ const garmentCatalog = {
     { id: "3001", label: "Premium Tee — Bella+Canvas 3001 (Best Seller)", baseCost: 8.5, premium: true },
     { id: "dm130", label: "Triblend Tee — District DM130 (Ultra Soft)", baseCost: 3.99, premium: true },
     { id: "g2400", label: "LS Tee — Gildan G2400 (Ultra Cotton)", baseCost: 6.56, premium: true },
+    { id: "g5400", label: "LS Tee — Gildan G5400 (Heavy Cotton)", baseCost: 5.93, premium: false },
     { id: "c1717", label: "Heavyweight Tee — Comfort Colors 1717 (Garment Dyed)", baseCost: 9.5, premium: true },
   ],
   hoodies: [
