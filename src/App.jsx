@@ -373,20 +373,19 @@ export default function App() {
   body: [
     [
       `${selectedGarment?.label || "Custom Apparel"} - DTF Decoration`,
-      quantity,
-      money(subtotal / quantity),
-      money(subtotal),
+      effectiveQuantity,
+      currency(pdfSubtotal / effectiveQuantity),
+      currency(pdfSubtotal),
     ],
   ],
-
-      styles: { fontSize: 10, cellPadding: 3 },
-      columnStyles: {
-  0: { cellWidth: 90 },
-  1: { halign: "center", cellWidth: 25 },
-  2: { halign: "right", cellWidth: 35 },
-  3: { halign: "right", cellWidth: 35 },
-},
-    });
+  styles: { fontSize: 10, cellPadding: 3 },
+  columnStyles: {
+    0: { cellWidth: 90 },
+    1: { halign: "center", cellWidth: 25 },
+    2: { halign: "right", cellWidth: 35 },
+    3: { halign: "right", cellWidth: 35 },
+  },
+});
 
     const tableEndY = doc.lastAutoTable?.finalY || 140;
     doc.setFontSize(11);
