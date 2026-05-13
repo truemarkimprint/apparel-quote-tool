@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import jsPDF from "jspdf";
+import logo from "./assets/TrueMark Single logo.png";
 import autoTable from "jspdf-autotable";
 import { Calculator, Shirt, RefreshCcw, Save, Package, FileText } from "lucide-react";
 import { motion } from "framer-motion";
@@ -346,10 +347,11 @@ export default function App() {
     const pdfTax = isManual ? calculations.displayTotal - calculations.displaySubtotal : calculations.tax;
     const pdfTotal = isManual ? calculations.displayTotal : calculations.finalTotal;
 
+    doc.addImage(logo, "PNG", 14, 10, 28, 28);
     doc.setFontSize(20);
-    doc.text("TrueMark Imprint Co. — Quote", 14, 18);
+    doc.text("TrueMark Imprint Co. — Quote", 48, 18);
     doc.setFontSize(10);
-    doc.text("Custom Apparel Pricing", 14, 22);
+    doc.text("Custom Apparel Pricing", 48, 22);
 
     doc.setFontSize(10);
     doc.text(`Prepared for: ${customerName || "Client"}`, 14, 28);
