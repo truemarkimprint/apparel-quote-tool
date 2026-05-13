@@ -367,60 +367,25 @@ export default function App() {
 
 
     autoTable(doc, {
-      startY: 66,
-      theme: "grid",
-      head: [["Category", "Details", "Amount"]],
-      body: isManual
-  ? [
-      ["Garment", `${garmentTypeLabel} • ${selectedGarment?.label || ""}`, ""],
-      [
-        "DTF Print",
-        `Front: ${frontPrint === "full" ? "Full Color" : frontPrint === "1" ? "1 Color" : "None"} | Back: ${
-          backPrint === "none" ? "None" : backPrint === "full" ? "Full Color" : "1 Color"
-        }${hasSleevePrint ? " | Sleeve Print" : ""}`,
-        "",
-      ],
-      [
-        "Size breakdown",
-        `XS-XL: ${xsToXlQty} | 2XL: ${qty2xl} | 3XL: ${qty3xl} | 4XL: ${qty4xl}`,
-        "",
-      ],
-      [
-        "Custom quoted pricing applied",
-        `${effectiveQuantity} × ${currency(manualPriceEach)}`,
-        currency(pdfSubtotal),
-      ],
-      ["Subtotal", "", currency(pdfSubtotal)],
-      ["Tax", includeTax ? `${salesTaxPct}% applied` : "Not included", currency(pdfTax)],
-      ["Final total", "", currency(pdfTotal)],
-    ]
-  : [
-      ["Garment", `${garmentTypeLabel} • ${selectedGarment?.label || ""}`, currency(calculations.garmentSubtotal)],
-      [
-        "DTF Print",
-        `Front: ${frontPrint === "full" ? "Full Color" : frontPrint === "1" ? "1 Color" : "None"} | Back: ${
-          backPrint === "none" ? "None" : backPrint === "full" ? "Full Color" : "1 Color"
-        }${hasSleevePrint ? " | Sleeve Print" : ""}`,
-        currency(calculations.decorationSubtotal),
-      ],
-      [
-        "Size breakdown",
-        `XS-XL: ${xsToXlQty} | 2XL: ${qty2xl} | 3XL: ${qty3xl} | 4XL: ${qty4xl}`,
-        currency(sizeUpchargeTotal),
-      ],
-      ["Packaging", `${currency(packagingFeePerUnit)} per unit`, currency(calculations.packagingSubtotal)],
-      ["Fixed fees", "Setup, art, shipping, rush", currency(calculations.fixedFees)],
-      ["Subtotal", "", currency(calculations.subtotal)],
-      ["Tax", includeTax ? `${salesTaxPct}% applied` : "Not included", currency(calculations.tax)],
-      ["Final total", "", currency(calculations.finalTotal)],
+  startY: 66,
+  theme: "grid",
+  head: [["Item", "Qty", "Unit Price", "Total"]],
+  body: [
+    [
+      `${selectedGarment?.label || "Custom Apparel"} - DTF Decoration`,
+      quantity,
+      money(subtotal / quantity),
+      money(subtotal),
     ],
-      headStyles: { fillColor: [15, 23, 42] },
+  ],
+
       styles: { fontSize: 10, cellPadding: 3 },
       columnStyles: {
-        0: { cellWidth: 45 },
-        1: { cellWidth: 85 },
-        2: { halign: "right", cellWidth: 45 },
-      },
+  0: { cellWidth: 90 },
+  1: { halign: "center", cellWidth: 25 },
+  2: { halign: "right", cellWidth: 35 },
+  3: { halign: "right", cellWidth: 35 },
+},
     });
 
     const tableEndY = doc.lastAutoTable?.finalY || 140;
