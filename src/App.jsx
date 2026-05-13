@@ -380,8 +380,8 @@ export default function App() {
   ],
   styles: { fontSize: 10, cellPadding: 3 },
   columnStyles: {
-    0: { cellWidth: 90 },
-    1: { halign: "center", cellWidth: 25 },
+    0: { cellWidth: 82 },
+    1: { halign: "center", cellWidth: 20 },
     2: { halign: "right", cellWidth: 35 },
     3: { halign: "right", cellWidth: 35 },
   },
