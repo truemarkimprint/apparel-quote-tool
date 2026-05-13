@@ -347,29 +347,39 @@ export default function App() {
     const pdfTax = isManual ? calculations.displayTotal - calculations.displaySubtotal : calculations.tax;
     const pdfTotal = isManual ? calculations.displayTotal : calculations.finalTotal;
 
-    doc.addImage(logo, "PNG", 14, 10, 28, 28);
-    doc.setFontSize(20);
-    doc.text("TrueMark Imprint Co. — Quote", 48, 18);
-    doc.setFontSize(10);
-    doc.text("Custom Apparel Pricing", 48, 22);
+    doc.setFont("helvetica", "bold");
+doc.setFontSize(22);
 
-    doc.setFontSize(10);
-    doc.text(`Prepared for: ${customerName || "Client"}`, 14, 28);
-    doc.text(`Quote name: ${quoteName}`, 14, 34);
-    doc.text(`Sales rep: ${salesRep}`, 14, 40);
-    doc.text(`Decoration: DTF`, 14, 46);
-    doc.text(`Garment: ${selectedGarment?.label || ""}`, 14, 52);
-    doc.text(`Quantity: ${effectiveQuantity}`, 14, 58);
-    doc.text(
+doc.text("TrueMark Imprint Co.", pageWidth / 2, 18, {
+  align: "center",
+});
+
+doc.setFont("helvetica", "normal");
+doc.setFontSize(12);
+
+doc.text("Custom Apparel Quote", pageWidth / 2, 25, {
+  align: "center",
+});
+
+doc.setFontSize(10);
+
+doc.text(`Prepared for: ${customerName || "Client"}`, 14, 38);
+doc.text(`Quote name: ${quoteName}`, 14, 44);
+doc.text(`Sales rep: ${salesRep}`, 14, 50);
+doc.text(`Decoration: DTF`, 14, 56);
+doc.text(`Garment: ${selectedGarment?.label || ""}`, 14, 62);
+doc.text(`Quantity: ${effectiveQuantity}`, 14, 68);
+
+doc.text(
   `Generated: ${new Date().toLocaleDateString()}`,
   pageWidth - 14,
-  28,
+  38,
   { align: "right" }
 );
 
 
     autoTable(doc, {
-  startY: 66,
+  startY: 78,
   theme: "grid",
   head: [["Item", "Qty", "Unit Price", "Total"]],
   body: [
