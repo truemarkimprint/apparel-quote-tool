@@ -387,6 +387,25 @@ export default function App() {
   },
 });
 
+autoTable(doc, {
+  startY: doc.lastAutoTable.finalY + 8,
+  theme: "plain",
+
+  body: [
+  ["Subtotal", "", currency(pdfSubtotal)],
+  [`Tax ${includeTax ? `${salesTaxPct}%` : ""}`, includeTax ? "applied" : "Not included", currency(pdfTax)],
+  ["Final Total", "", currency(pdfTotal)],
+],
+
+  styles: { fontSize: 10, cellPadding: 2 },
+
+  columnStyles: {
+    0: { cellWidth: 45, fontStyle: "bold" },
+    1: { cellWidth: 85 },
+    2: { halign: "right", cellWidth: 35 },
+  },
+});
+
     const tableEndY = doc.lastAutoTable?.finalY || 140;
     doc.setFontSize(11);
     doc.text("Notes", 14, tableEndY + 14);
