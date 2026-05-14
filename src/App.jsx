@@ -183,6 +183,8 @@ export default function App() {
   const [profitMarginPct, setProfitMarginPct] = useState(38);
   const [salesTaxPct, setSalesTaxPct] = useState(7);
   const [includeTax, setIncludeTax] = useState(true);
+  const [ccFeePct, setCcFeePct] = useState(3);
+  const [includeCcFee, setIncludeCcFee] = useState(false);
   const [manualPriceEach, setManualPriceEach] = useState("");
 
   const [tiers] = useState(defaultTiers);
@@ -246,8 +248,18 @@ export default function App() {
     const preProfit = hardCost + overhead;
     const profit = preProfit * (safeNum(profitMarginPct) / 100);
     const subtotal = preProfit + profit;
-    const tax = includeTax ? subtotal * (safeNum(salesTaxPct) / 100) : 0;
-    const finalTotal = subtotal + tax;
+
+const ccFee = includeCcFee
+  ? subtotal * (safeNum(ccFeePct) / 100)
+  : 0;
+
+const taxableSubtotal = subtotal + ccFee;
+
+const tax = includeTax
+  ? taxableSubtotal * (safeNum(salesTaxPct) / 100)
+  : 0;
+
+const finalTotal = taxableSubtotal + tax;
 
     const rawPrice = qty > 0 ? finalTotal / qty : 0;
     const calculatedPricePerPiece = Math.round(rawPrice * 4) / 4;
@@ -272,6 +284,8 @@ export default function App() {
       overhead,
       profit,
       subtotal,
+      ccFee,
+      taxableSubtotal,
       tax,
       finalTotal,
       displaySubtotal,
@@ -332,6 +346,8 @@ export default function App() {
     setProfitMarginPct(38);
     setSalesTaxPct(7);
     setIncludeTax(true);
+    setCcFeePct(3);
+    setIncludeCcFee(false);
     setManualPriceEach("");
     setNotes(
       "Quote includes standard DTF production. Freight beyond local delivery not included unless listed above. Final invoice may adjust for exact garment availability and size breakdown."
@@ -405,6 +421,9 @@ autoTable(doc, {
 
   body: [
   ["Subtotal", "", currency(pdfSubtotal)],
+  ...(includeCcFee
+    ? [[`Credit Card Fee ${ccFeePct}%`, "applied", currency(calculations.ccFee)]]
+    : []),
   [`Tax ${includeTax ? `${salesTaxPct}%` : ""}`, includeTax ? "applied" : "Not included", currency(pdfTax)],
   ["Final Total", "", currency(pdfTotal)],
 ],
@@ -643,6 +662,14 @@ autoTable(doc, {
                 <Field label="Sales Tax %">
                   <input style={inputStyle} type="number" value={salesTaxPct} onChange={(e) => setSalesTaxPct(e.target.value)} />
                 </Field>
+                <Field label="Credit Card Fee %">
+  <input
+    style={inputStyle}
+    type="number"
+    value={ccFeePct}
+    onChange={(e) => setCcFeePct(e.target.value)}
+  />
+</Field>
                 <Field label="Manual Price / Piece">
                   <input
                     style={inputStyle}
@@ -660,6 +687,14 @@ autoTable(doc, {
                   <input type="checkbox" checked={includeTax} onChange={(e) => setIncludeTax(e.target.checked)} />
                   Include tax in final quote
                 </label>
+                <label style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14, fontWeight: 600, marginTop: 8 }}>
+  <input
+    type="checkbox"
+    checked={includeCcFee}
+    onChange={(e) => setIncludeCcFee(e.target.checked)}
+  />
+  Include credit card processing fee
+</label>
               </div>
 
               <Field label="Quote Notes">
