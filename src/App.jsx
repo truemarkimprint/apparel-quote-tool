@@ -579,7 +579,7 @@ autoTable(doc, {
                 <div style={{ display: "flex", alignItems: "end" }}>
                   <label style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14, fontWeight: 600 }}>
                     <input type="checkbox" checked={hasSleevePrint} onChange={(e) => setHasSleevePrint(e.target.checked)} />
-                    Sleeve Print
+                    Additional Sleeve Print Charge
                   </label>
                 </div>
               </div>
