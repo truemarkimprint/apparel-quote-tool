@@ -358,10 +358,18 @@ const finalTotal = taxableSubtotal + tax;
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    const isManual = manualPriceEach !== "";
-    const pdfSubtotal = isManual ? calculations.displaySubtotal : calculations.subtotal;
-    const pdfTax = isManual ? calculations.displayTotal - calculations.displaySubtotal : calculations.tax;
-    const pdfTotal = isManual ? calculations.displayTotal : calculations.finalTotal;
+   const isManual = manualPriceEach !== "";
+const pdfSubtotal = isManual ? calculations.displaySubtotal : calculations.subtotal;
+
+const pdfCcFee = includeCcFee
+  ? pdfSubtotal * (safeNum(ccFeePct) / 100)
+  : 0;
+
+const pdfTax = includeTax
+  ? (pdfSubtotal + pdfCcFee) * (safeNum(salesTaxPct) / 100)
+  : 0;
+
+const pdfTotal = pdfSubtotal + pdfCcFee + pdfTax;
 
     doc.setFont("helvetica", "bold");
 doc.setFontSize(22);
@@ -422,7 +430,7 @@ autoTable(doc, {
   body: [
   ["Subtotal", "", currency(pdfSubtotal)],
   ...(includeCcFee
-    ? [[`Credit Card Fee ${ccFeePct}%`, "applied", currency(calculations.ccFee)]]
+    ? [[`Credit Card Fee ${ccFeePct}%`, "applied", currency(pdfCcFee)]]
     : []),
   [`Tax ${includeTax ? `${salesTaxPct}%` : ""}`, includeTax ? "applied" : "Not included", currency(pdfTax)],
   ["Final Total", "", currency(pdfTotal)],
