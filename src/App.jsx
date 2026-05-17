@@ -29,6 +29,7 @@ const garmentCatalog = {
   hats: [
     { id: "cp80", label: "Budget Cap — Port & Company CP80", baseCost: 6.25, premium: false },
     { id: "112", label: "Premium Trucker — Richardson 112", baseCost: 8.9, premium: true },
+    { id: "169", label: "Premium 7PanelFlat — Richardson 169", baseCost: 12.65, premium: true },
     { id: "c112", label: "Premium Snapback — Yupoong Classics", baseCost: 9.6, premium: true },
   ],
 };
