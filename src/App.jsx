@@ -29,7 +29,7 @@ const garmentCatalog = {
   hats: [
     { id: "cp80", label: "Budget Cap — Port & Company CP80", baseCost: 6.25, premium: false },
     { id: "112", label: "Premium Trucker — Richardson 112", baseCost: 8.9, premium: true },
-    { id: "169", label: "Premium 7PanelFlat — Richardson 169", baseCost: 12.65, premium: true },
+    { id: "169", label: "Premium 7PanelFlat — Richardson 169", baseCost: 12.00, premium: true },
     { id: "c112", label: "Premium Snapback — Yupoong Classics", baseCost: 9.6, premium: true },
   ],
 };
@@ -205,9 +205,14 @@ export default function App() {
 
   const garmentCostEach = useMemo(() => {
     const base = safeNum(selectedGarment?.baseCost);
-    const tierAdj = safeNum(selectedTier?.garmentCostAdj);
-    return Math.max(0, round2(base + tierAdj));
-  }, [selectedGarment, selectedTier]);
+    
+   const tierAdj =
+  garmentType === "hats"
+    ? 0
+    : safeNum(selectedTier?.garmentCostAdj);
+
+return Math.max(0, round2(base + tierAdj));
+  }, [selectedGarment, selectedTier, garmentType]);
 
   const decorationCostEach = useMemo(() => {
     const hasFront = frontPrint !== "none";
