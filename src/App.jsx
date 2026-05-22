@@ -16,6 +16,9 @@ const garmentCatalog = {
     { id: "g5400", label: "LS Tee — Gildan G5400 (Heavy Cotton)", baseCost: 5.93, premium: false },
     { id: "c1717", label: "Heavyweight Tee — Comfort Colors 1717 (Garment Dyed)", baseCost: 9.5, premium: true },
   ],
+  bottoms: [
+    { id: "lst311", label: "Shorts — Sport-Tek LST311 Womens Jersey Knit Squad Short", baseCost: 6.33, premium: false,},
+],
   hoodies: [
     { id: "g185", label: "Budget Hoodie — Gildan G185", baseCost: 17.5, premium: false },
     { id: "pc78h", label: "Core Hoodie — Port & Company PC78H", baseCost: 19.25, premium: false },
@@ -320,6 +323,7 @@ const finalTotal = taxableSubtotal + tax;
     tees: "Tee",
     hoodies: "Hoodie",
     polos: "Polo",
+    bottoms: "Bottom",
     hats: "Hat",
   }[garmentType];
 
@@ -550,6 +554,7 @@ autoTable(doc, {
                     <option value="tees">Tees</option>
                     <option value="hoodies">Hoodies</option>
                     <option value="polos">Polos</option>
+                    <option value="bottoms">Bottoms</option>
                     <option value="hats">Hats</option>
                   </select>
                 </Field>
