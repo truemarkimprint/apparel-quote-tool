@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 const garmentCatalog = {
   tees: [
     { id: "g500", label: "Budget Tee — Gildan G500 (Standard Cotton)", baseCost: 5.25, premium: false },
+    { id: "g3933", label: "Tank Top — NxtLvl 3933 (Standard Cotton)", baseCost: 4.97, premium: false },
     { id: "pc54", label: "Value Tee — Port & Company PC54 (Softer Cotton)", baseCost: 5.95, premium: false },
     { id: "n3600", label: "Soft Tee — Next Level 3600 (Retail Fit)", baseCost: 7.75, premium: true },
     { id: "3001", label: "Premium Tee — Bella+Canvas 3001 (Best Seller)", baseCost: 8.5, premium: true },
