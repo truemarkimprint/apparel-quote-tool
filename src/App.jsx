@@ -271,40 +271,47 @@ function SavedQuotesDrawer({ open, onClose }) {
               </span>
             </div>
 
-            <div style={{
-              display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8,
-              background: "white", borderRadius: 12, padding: 12,
-              border: "1px solid #e2e8f0", marginBottom: 12, fontSize: 13,
-            }}>
+            {/* Sell price highlight */}
+            <div style={{ background: "#0f172a", color: "white", borderRadius: 14, padding: "12px 16px", marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>GARMENT</div>
-                <div style={{ fontWeight: 600 }}>{q.garment_type}</div>
+                <div style={{ color: "#94a3b8", fontSize: 11 }}>PRICE / PC</div>
+                <div style={{ fontWeight: 800, fontSize: 22 }}>{currency(q.price_per_piece)}</div>
               </div>
-              <div>
-                <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>PRICE / PC</div>
-                <div style={{ fontWeight: 700, color: "#0f172a" }}>{currency(q.price_per_piece)}</div>
-              </div>
-              <div>
-                <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>TOTAL</div>
-                <div style={{ fontWeight: 700, color: "#0f172a" }}>{currency(q.final_total)}</div>
-              </div>
-              <div>
-                <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>HARD COST</div>
-                <div style={{ fontWeight: 600 }}>{currency(q.hard_cost)}</div>
-              </div>
-              <div>
-                <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>SUBTOTAL</div>
-                <div style={{ fontWeight: 600 }}>{currency(q.subtotal)}</div>
-              </div>
-              <div>
-                <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>MARGIN</div>
-                <div style={{ fontWeight: 600 }}>{q.profit_margin_pct}%</div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ color: "#94a3b8", fontSize: 11 }}>TOTAL</div>
+                <div style={{ fontWeight: 700, fontSize: 16 }}>{currency(q.final_total)}</div>
               </div>
             </div>
 
-            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 10 }}>
-              Overhead: {q.overhead_pct}% · Tax: {q.include_tax ? `${q.sales_tax_pct}%` : "none"}
-              {q.include_cc_fee ? ` · CC Fee: ${q.cc_fee_pct}%` : ""}
+            {/* Full internal breakdown */}
+            <div style={{ background: "white", borderRadius: 12, padding: "8px 12px", border: "1px solid #e2e8f0", marginBottom: 10 }}>
+              {[
+                ["Garment", q.garment_label || q.garment_type],
+                ["Quoted Quantity", q.total_qty],
+                ["Garment / ea", currency(q.garment_cost_each)],
+                ["DTF / ea", currency(q.decoration_cost_each)],
+                ["Garment Subtotal", currency(q.garment_subtotal)],
+                ["DTF Subtotal", currency(q.decoration_subtotal)],
+                ["Size Upcharges", currency(q.size_upcharge_total)],
+                ["Packaging Subtotal", currency(q.packaging_subtotal)],
+                ["Fixed Fees", currency(q.fixed_fees)],
+                ["Hard Cost", currency(q.hard_cost)],
+                ["Overhead (" + q.overhead_pct + "%)", currency(q.overhead)],
+                ["Profit (" + q.profit_margin_pct + "%)", currency(q.profit)],
+              ].map(([label, value]) => (
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
+                  <span style={{ color: "#475569" }}>{label}</span>
+                  <span style={{ fontWeight: 600, color: "#0f172a" }}>{value}</span>
+                </div>
+              ))}
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13, fontWeight: 700 }}>
+                <span>Subtotal</span>
+                <span>{currency(q.subtotal)}</span>
+              </div>
+              <div style={{ fontSize: 12, color: "#94a3b8", paddingTop: 4 }}>
+                Tax: {q.include_tax ? `${q.sales_tax_pct}%` : "none"}
+                {q.include_cc_fee ? ` · CC Fee: ${q.cc_fee_pct}%` : ""}
+              </div>
             </div>
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
@@ -518,6 +525,13 @@ export default function App() {
       cc_fee_pct: safeNum(ccFeePct),
       include_cc_fee: includeCcFee,
       hard_cost: round2(calculations.hardCost),
+      garment_subtotal: round2(calculations.garmentSubtotal),
+      decoration_subtotal: round2(calculations.decorationSubtotal),
+      size_upcharge_total: round2(sizeUpchargeTotal),
+      packaging_subtotal: round2(calculations.packagingSubtotal),
+      fixed_fees: round2(calculations.fixedFees),
+      overhead: round2(calculations.overhead),
+      profit: round2(calculations.profit),
       subtotal: round2(calculations.subtotal),
       final_total: round2(calculations.finalTotal),
       price_per_piece: round2(calculations.pricePerPiece),
