@@ -6,7 +6,6 @@ import { Calculator, Shirt, RefreshCcw, Save, Package, FileText, List, X, CheckC
 import { motion } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
 
-// ── Supabase client ──────────────────────────────────────────────────────────
 const supabase = createClient(
   "https://zbnpewjafbztidohytjh.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpibnBld2phZmJ6dGlkb2h5dGpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODU5ODQsImV4cCI6MjA5NTE2MTk4NH0.iblJDKPf5oS1M695FmjRDaG3AQES0l_QM-3eiBoBlbg"
@@ -180,7 +179,6 @@ function StatusBadge({ status }) {
   );
 }
 
-// ── Saved Quotes Drawer ──────────────────────────────────────────────────────
 function SavedQuotesDrawer({ open, onClose }) {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -204,22 +202,22 @@ function SavedQuotesDrawer({ open, onClose }) {
     fetchQuotes();
   }
 
+  async function deleteQuote(id) {
+    if (!window.confirm("Delete this quote? This can't be undone.")) return;
+    await supabase.from("quotes").delete().eq("id", id);
+    fetchQuotes();
+  }
+
   if (!open) return null;
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 1000,
-      display: "flex", justifyContent: "flex-end",
-    }}>
-      {/* Backdrop */}
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", justifyContent: "flex-end" }}>
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)" }} />
-
-      {/* Panel */}
       <motion.div
         initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 260 }}
         style={{
-          position: "relative", width: 560, maxWidth: "95vw",
+          position: "relative", width: 580, maxWidth: "95vw",
           background: "white", height: "100%", overflowY: "auto",
           padding: 28, boxShadow: "-8px 0 40px rgba(0,0,0,0.15)",
         }}
@@ -232,7 +230,6 @@ function SavedQuotesDrawer({ open, onClose }) {
         </div>
 
         {loading && <p style={{ color: "#64748b" }}>Loading quotes…</p>}
-
         {!loading && quotes.length === 0 && (
           <p style={{ color: "#64748b" }}>No saved quotes yet. Hit "Save Quote" to save your first one!</p>
         )}
@@ -255,6 +252,25 @@ function SavedQuotesDrawer({ open, onClose }) {
               <StatusBadge status={q.status} />
             </div>
 
+            {/* Size breakdown */}
+            <div style={{
+              background: "#f8fafc", borderRadius: 10, padding: "8px 12px",
+              marginBottom: 10, fontSize: 12, color: "#475569",
+            }}>
+              <span style={{ fontWeight: 600, color: "#0f172a", marginRight: 8 }}>Sizes:</span>
+              {[
+                ["XS", q.qty_xs], ["S", q.qty_s], ["M", q.qty_m],
+                ["L", q.qty_l], ["XL", q.qty_xl], ["2XL", q.qty_2xl],
+                ["3XL", q.qty_3xl], ["4XL", q.qty_4xl],
+              ]
+                .filter(([, v]) => safeNum(v) > 0)
+                .map(([label, v]) => `${label}: ${v}`)
+                .join(" · ")}
+              <span style={{ marginLeft: 8, fontWeight: 600, color: "#0f172a" }}>
+                (Total: {q.total_qty})
+              </span>
+            </div>
+
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8,
               background: "white", borderRadius: 12, padding: 12,
@@ -265,12 +281,12 @@ function SavedQuotesDrawer({ open, onClose }) {
                 <div style={{ fontWeight: 600 }}>{q.garment_type}</div>
               </div>
               <div>
-                <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>QTY</div>
-                <div style={{ fontWeight: 600 }}>{q.total_qty}</div>
-              </div>
-              <div>
                 <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>PRICE / PC</div>
                 <div style={{ fontWeight: 700, color: "#0f172a" }}>{currency(q.price_per_piece)}</div>
+              </div>
+              <div>
+                <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>TOTAL</div>
+                <div style={{ fontWeight: 700, color: "#0f172a" }}>{currency(q.final_total)}</div>
               </div>
               <div>
                 <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>HARD COST</div>
@@ -281,35 +297,41 @@ function SavedQuotesDrawer({ open, onClose }) {
                 <div style={{ fontWeight: 600 }}>{currency(q.subtotal)}</div>
               </div>
               <div>
-                <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>TOTAL</div>
-                <div style={{ fontWeight: 700, color: "#0f172a" }}>{currency(q.final_total)}</div>
+                <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>MARGIN</div>
+                <div style={{ fontWeight: 600 }}>{q.profit_margin_pct}%</div>
               </div>
             </div>
 
-            {/* Internal details */}
             <div style={{ fontSize: 12, color: "#64748b", marginBottom: 10 }}>
-              Overhead: {q.overhead_pct}% · Margin: {q.profit_margin_pct}% · Tax: {q.include_tax ? `${q.sales_tax_pct}%` : "none"}
+              Overhead: {q.overhead_pct}% · Tax: {q.include_tax ? `${q.sales_tax_pct}%` : "none"}
               {q.include_cc_fee ? ` · CC Fee: ${q.cc_fee_pct}%` : ""}
             </div>
 
-            {/* Status actions */}
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {["draft", "sent", "approved", "declined"].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => updateStatus(q.id, s)}
-                  style={{
-                    ...buttonStyle,
-                    padding: "5px 12px",
-                    fontSize: 12,
-                    background: q.status === s ? "#0f172a" : "white",
-                    color: q.status === s ? "white" : "#0f172a",
-                    borderColor: q.status === s ? "#0f172a" : "#cbd5e1",
-                  }}
-                >
-                  {s.charAt(0).toUpperCase() + s.slice(1)}
-                </button>
-              ))}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {["draft", "sent", "approved", "declined"].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => updateStatus(q.id, s)}
+                    style={{
+                      ...buttonStyle,
+                      padding: "5px 12px",
+                      fontSize: 12,
+                      background: q.status === s ? "#0f172a" : "white",
+                      color: q.status === s ? "white" : "#0f172a",
+                      borderColor: q.status === s ? "#0f172a" : "#cbd5e1",
+                    }}
+                  >
+                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => deleteQuote(q.id)}
+                style={{ ...buttonStyle, padding: "5px 12px", fontSize: 12, color: "#dc2626", borderColor: "#fca5a5" }}
+              >
+                Delete
+              </button>
             </div>
           </div>
         ))}
@@ -335,10 +357,15 @@ export default function App() {
   const [frontBackComboCost, setFrontBackComboCost] = useState(6);
   const [sleevePrintCost, setSleevePrintCost] = useState(1.4);
 
-  const [xsToXlQty, setXsToXlQty] = useState(34);
-  const [qty2xl, setQty2xl] = useState(8);
-  const [qty3xl, setQty3xl] = useState(4);
-  const [qty4xl, setQty4xl] = useState(2);
+  // Individual size quantities
+  const [qtyXS, setQtyXS] = useState(0);
+  const [qtyS, setQtyS] = useState(0);
+  const [qtyM, setQtyM] = useState(0);
+  const [qtyL, setQtyL] = useState(0);
+  const [qtyXL, setQtyXL] = useState(0);
+  const [qty2xl, setQty2xl] = useState(0);
+  const [qty3xl, setQty3xl] = useState(0);
+  const [qty4xl, setQty4xl] = useState(0);
 
   const [upcharge2xl, setUpcharge2xl] = useState(2.5);
   const [upcharge3xl, setUpcharge3xl] = useState(3.5);
@@ -363,15 +390,16 @@ export default function App() {
     "Quote includes standard DTF production. Freight beyond local delivery not included unless listed above. Final invoice may adjust for exact garment availability and size breakdown."
   );
 
-  const [saveStatus, setSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const [saveStatus, setSaveStatus] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const garmentOptions = garmentCatalog[garmentType] || [];
   const selectedGarment = garmentOptions.find((g) => g.id === selectedGarmentId) || garmentOptions[0];
 
   const totalSizeQty = useMemo(() => {
-    return safeNum(xsToXlQty) + safeNum(qty2xl) + safeNum(qty3xl) + safeNum(qty4xl);
-  }, [xsToXlQty, qty2xl, qty3xl, qty4xl]);
+    return safeNum(qtyXS) + safeNum(qtyS) + safeNum(qtyM) + safeNum(qtyL) +
+      safeNum(qtyXL) + safeNum(qty2xl) + safeNum(qty3xl) + safeNum(qty4xl);
+  }, [qtyXS, qtyS, qtyM, qtyL, qtyXL, qty2xl, qty3xl, qty4xl]);
 
   const effectiveQuantity = totalSizeQty;
   const selectedTier = useMemo(() => getTierForQty(effectiveQuantity, tiers), [effectiveQuantity, tiers]);
@@ -386,13 +414,9 @@ export default function App() {
     const hasFront = frontPrint !== "none";
     const hasBack = backPrint !== "none";
     let dtfCost = 0;
-    if (hasFront && hasBack) {
-      dtfCost = safeNum(frontBackComboCost);
-    } else if (hasFront) {
-      dtfCost = safeNum(frontPrintCost);
-    } else if (hasBack) {
-      dtfCost = safeNum(backPrintCost);
-    }
+    if (hasFront && hasBack) dtfCost = safeNum(frontBackComboCost);
+    else if (hasFront) dtfCost = safeNum(frontPrintCost);
+    else if (hasBack) dtfCost = safeNum(backPrintCost);
     if (hasSleevePrint) dtfCost += safeNum(sleevePrintCost);
     return round2(dtfCost);
   }, [frontPrint, backPrint, hasSleevePrint, frontPrintCost, backPrintCost, frontBackComboCost, sleevePrintCost]);
@@ -400,8 +424,8 @@ export default function App() {
   const sizeUpchargeTotal = useMemo(() => {
     return round2(
       safeNum(qty2xl) * safeNum(upcharge2xl) +
-        safeNum(qty3xl) * safeNum(upcharge3xl) +
-        safeNum(qty4xl) * safeNum(upcharge4xl)
+      safeNum(qty3xl) * safeNum(upcharge3xl) +
+      safeNum(qty4xl) * safeNum(upcharge4xl)
     );
   }, [qty2xl, qty3xl, qty4xl, upcharge2xl, upcharge3xl, upcharge4xl]);
 
@@ -446,7 +470,18 @@ export default function App() {
     tees: "Tee", hoodies: "Hoodie", polos: "Polo", bottoms: "Bottom", hats: "Hat",
   }[garmentType];
 
-  // ── Save Quote ─────────────────────────────────────────────────────────────
+  // Size run summary string for display
+  const sizeRunSummary = [
+    safeNum(qtyXS) > 0 ? `XS: ${qtyXS}` : null,
+    safeNum(qtyS) > 0 ? `S: ${qtyS}` : null,
+    safeNum(qtyM) > 0 ? `M: ${qtyM}` : null,
+    safeNum(qtyL) > 0 ? `L: ${qtyL}` : null,
+    safeNum(qtyXL) > 0 ? `XL: ${qtyXL}` : null,
+    safeNum(qty2xl) > 0 ? `2XL: ${qty2xl}` : null,
+    safeNum(qty3xl) > 0 ? `3XL: ${qty3xl}` : null,
+    safeNum(qty4xl) > 0 ? `4XL: ${qty4xl}` : null,
+  ].filter(Boolean).join(" | ");
+
   const saveQuote = async () => {
     setSaveStatus("saving");
     const { error } = await supabase.from("quotes").insert([{
@@ -454,42 +489,39 @@ export default function App() {
       customer_name: customerName,
       sales_rep: salesRep,
       status: "draft",
-
       garment_type: garmentType,
       garment_id: selectedGarmentId,
       garment_label: selectedGarment?.label || "",
       garment_cost_each: garmentCostEach,
-
-      qty_xs_to_xl: safeNum(xsToXlQty),
+      qty_xs: safeNum(qtyXS),
+      qty_s: safeNum(qtyS),
+      qty_m: safeNum(qtyM),
+      qty_l: safeNum(qtyL),
+      qty_xl: safeNum(qtyXL),
       qty_2xl: safeNum(qty2xl),
       qty_3xl: safeNum(qty3xl),
       qty_4xl: safeNum(qty4xl),
       total_qty: effectiveQuantity,
-
       front_print: frontPrint,
       back_print: backPrint,
       has_sleeve_print: hasSleevePrint,
       decoration_cost_each: decorationCostEach,
-
       setup_fee: safeNum(setupFee),
       art_fee: safeNum(artFee),
       shipping_fee: safeNum(shippingFee),
       rush_fee: safeNum(rushFee),
       packaging_fee_per_unit: safeNum(packagingFeePerUnit),
-
       overhead_pct: safeNum(overheadPct),
       profit_margin_pct: safeNum(profitMarginPct),
       sales_tax_pct: safeNum(salesTaxPct),
       include_tax: includeTax,
       cc_fee_pct: safeNum(ccFeePct),
       include_cc_fee: includeCcFee,
-
       hard_cost: round2(calculations.hardCost),
       subtotal: round2(calculations.subtotal),
       final_total: round2(calculations.finalTotal),
       price_per_piece: round2(calculations.pricePerPiece),
       manual_price_each: manualPriceEach !== "" ? safeNum(manualPriceEach) : null,
-
       notes,
     }]);
 
@@ -515,34 +547,19 @@ export default function App() {
     setBackPrintCost(4);
     setFrontBackComboCost(6);
     setSleevePrintCost(1.4);
-    setXsToXlQty(34);
-    setQty2xl(8);
-    setQty3xl(4);
-    setQty4xl(2);
-    setUpcharge2xl(2.5);
-    setUpcharge3xl(3.5);
-    setUpcharge4xl(4.5);
-    setSetupFee(35);
-    setArtFee(25);
-    setShippingFee(18);
-    setRushFee(0);
-    setPackagingFeePerUnit(0);
-    setOverheadPct(10);
-    setProfitMarginPct(38);
-    setSalesTaxPct(7);
-    setIncludeTax(true);
-    setCcFeePct(3);
-    setIncludeCcFee(false);
-    setManualPriceEach("");
-    setNotes(
-      "Quote includes standard DTF production. Freight beyond local delivery not included unless listed above. Final invoice may adjust for exact garment availability and size breakdown."
-    );
+    setQtyXS(0); setQtyS(0); setQtyM(0); setQtyL(0); setQtyXL(0);
+    setQty2xl(0); setQty3xl(0); setQty4xl(0);
+    setUpcharge2xl(2.5); setUpcharge3xl(3.5); setUpcharge4xl(4.5);
+    setSetupFee(35); setArtFee(25); setShippingFee(18); setRushFee(0);
+    setPackagingFeePerUnit(0); setOverheadPct(10); setProfitMarginPct(38);
+    setSalesTaxPct(7); setIncludeTax(true); setCcFeePct(3);
+    setIncludeCcFee(false); setManualPriceEach("");
+    setNotes("Quote includes standard DTF production. Freight beyond local delivery not included unless listed above. Final invoice may adjust for exact garment availability and size breakdown.");
   };
 
   const generateQuotePdf = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-
     const isManual = manualPriceEach !== "";
     const pdfSubtotal = isManual ? calculations.displaySubtotal : calculations.subtotal;
     const pdfCcFee = includeCcFee ? pdfSubtotal * (safeNum(ccFeePct) / 100) : 0;
@@ -564,8 +581,27 @@ export default function App() {
     doc.text(`Quantity: ${effectiveQuantity}`, 14, 68);
     doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 14, 38, { align: "right" });
 
+    // Size breakdown table
+    const sizeRows = [
+      ["XS", qtyXS], ["S", qtyS], ["M", qtyM], ["L", qtyL],
+      ["XL", qtyXL], ["2XL", qty2xl], ["3XL", qty3xl], ["4XL", qty4xl],
+    ].filter(([, v]) => safeNum(v) > 0);
+
     autoTable(doc, {
-      startY: 78,
+      startY: 75,
+      theme: "grid",
+      head: [["Size", "Qty", "Size", "Qty", "Size", "Qty", "Size", "Qty"]],
+      body: [sizeRows.reduce((acc, [sz, qty], i) => {
+        acc[i * 2] = sz;
+        acc[i * 2 + 1] = String(safeNum(qty));
+        return acc;
+      }, Array(8).fill(""))],
+      styles: { fontSize: 9, cellPadding: 2, halign: "center" },
+      headStyles: { fillColor: [15, 23, 42] },
+    });
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 6,
       theme: "grid",
       head: [["Item", "Qty", "Unit Price", "Total"]],
       body: [[
@@ -597,7 +633,7 @@ export default function App() {
       },
     });
 
-    const tableEndY = doc.lastAutoTable?.finalY || 140;
+    const tableEndY = doc.lastAutoTable?.finalY || 160;
     doc.setFontSize(11);
     doc.text("Notes", 14, tableEndY + 14);
     doc.setFontSize(10);
@@ -725,23 +761,39 @@ export default function App() {
                 </Field>
               </div>
 
+              {/* Individual Size Breakdown */}
               <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Size Breakdown</div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 16 }}>
-                <Field label="XS–XL Qty">
-                  <input style={inputStyle} type="number" value={xsToXlQty} onChange={(e) => setXsToXlQty(e.target.value)} />
-                </Field>
-                <Field label="2XL Qty">
-                  <input style={inputStyle} type="number" value={qty2xl} onChange={(e) => setQty2xl(e.target.value)} />
-                </Field>
-                <Field label="3XL Qty">
-                  <input style={inputStyle} type="number" value={qty3xl} onChange={(e) => setQty3xl(e.target.value)} />
-                </Field>
-                <Field label="4XL Qty">
-                  <input style={inputStyle} type="number" value={qty4xl} onChange={(e) => setQty4xl(e.target.value)} />
-                </Field>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 12, marginBottom: 16 }}>
+                {[
+                  ["XS", qtyXS, setQtyXS],
+                  ["S", qtyS, setQtyS],
+                  ["M", qtyM, setQtyM],
+                  ["L", qtyL, setQtyL],
+                  ["XL", qtyXL, setQtyXL],
+                  ["2XL", qty2xl, setQty2xl],
+                  ["3XL", qty3xl, setQty3xl],
+                  ["4XL", qty4xl, setQty4xl],
+                ].map(([label, val, setter]) => (
+                  <Field key={label} label={label}>
+                    <input
+                      style={inputStyle}
+                      type="number"
+                      min="0"
+                      value={val}
+                      onChange={(e) => setter(e.target.value)}
+                    />
+                  </Field>
+                ))}
               </div>
 
+              <div style={{ marginBottom: 16, color: "#475569", fontSize: 13 }}>
+                Total qty: <strong>{totalSizeQty}</strong>
+                {sizeRunSummary && (
+                  <span style={{ marginLeft: 12, color: "#94a3b8" }}>{sizeRunSummary}</span>
+                )}
+              </div>
+
+              {/* Plus upcharges for 2XL+ */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }}>
                 <Field label="2XL Upcharge">
                   <input style={inputStyle} type="number" value={upcharge2xl} onChange={(e) => setUpcharge2xl(e.target.value)} />
@@ -752,10 +804,6 @@ export default function App() {
                 <Field label="4XL Upcharge">
                   <input style={inputStyle} type="number" value={upcharge4xl} onChange={(e) => setUpcharge4xl(e.target.value)} />
                 </Field>
-              </div>
-
-              <div style={{ marginBottom: 16, color: "#475569", fontSize: 13 }}>
-                Size total entered: <strong>{totalSizeQty}</strong>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 16 }}>
@@ -819,7 +867,6 @@ export default function App() {
                 <div style={{ fontSize: 38, fontWeight: 800, marginTop: 8 }}>{currency(calculations.pricePerPiece)}</div>
                 <div style={{ color: "#cbd5e1", fontSize: 14, marginTop: 8 }}>Total Quote: {currency(calculations.displayTotal)}</div>
               </div>
-
               <SummaryRow label="Quoted quantity" value={String(effectiveQuantity)} />
               <SummaryRow label="Garment / ea" value={currency(garmentCostEach)} />
               <SummaryRow label="DTF / ea" value={currency(decorationCostEach)} />
@@ -846,19 +893,35 @@ export default function App() {
                   Prepared for {customerName || "Client"} • Rep: {salesRep}
                 </div>
               </div>
-
               <div style={{ background: "#f8fafc", borderRadius: 16, padding: 16, fontSize: 14, marginBottom: 16 }}>
                 <SummaryRow label="Garment" value={selectedGarment?.label || ""} />
                 <SummaryRow label="Category" value={garmentTypeLabel} />
                 <SummaryRow label="Decoration" value="DTF" />
-                <SummaryRow label="Quantity" value={String(effectiveQuantity)} />
+                <SummaryRow label="Total Quantity" value={String(effectiveQuantity)} />
                 <SummaryRow
                   label="Print Details"
                   value={`Front: ${frontPrint === "full" ? "Full Color" : frontPrint === "1" ? "1 Color" : "None"} | Back: ${backPrint === "none" ? "None" : backPrint === "full" ? "Full Color" : "1 Color"}${hasSleevePrint ? " | Sleeve" : ""}`}
                 />
-                <SummaryRow label="Sizes" value={`XS-XL: ${xsToXlQty} | 2XL: ${qty2xl} | 3XL: ${qty3xl} | 4XL: ${qty4xl}`} />
+                {/* Individual sizes */}
+                <div style={{ paddingTop: 8, borderTop: "1px solid #e2e8f0", marginTop: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Size Breakdown</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                    {[
+                      ["XS", qtyXS], ["S", qtyS], ["M", qtyM], ["L", qtyL],
+                      ["XL", qtyXL], ["2XL", qty2xl], ["3XL", qty3xl], ["4XL", qty4xl],
+                    ].map(([label, val]) => (
+                      <div key={label} style={{
+                        background: safeNum(val) > 0 ? "#0f172a" : "#f1f5f9",
+                        color: safeNum(val) > 0 ? "white" : "#94a3b8",
+                        borderRadius: 8, padding: "6px 8px", textAlign: "center", fontSize: 12,
+                      }}>
+                        <div style={{ fontWeight: 700 }}>{label}</div>
+                        <div>{safeNum(val) > 0 ? val : "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-
               <div style={{ background: "#0f172a", color: "white", borderRadius: 20, padding: 20, marginBottom: 16 }}>
                 <div style={{ color: "#cbd5e1", fontSize: 14 }}>Quoted Price</div>
                 <div style={{ fontSize: 40, fontWeight: 800, marginTop: 8 }}>{currency(calculations.pricePerPiece)}</div>
@@ -868,12 +931,10 @@ export default function App() {
                   <strong>{currency(calculations.displayTotal)}</strong>
                 </div>
               </div>
-
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontWeight: 700, marginBottom: 8 }}>Notes</div>
                 <div style={{ color: "#475569", fontSize: 14, lineHeight: 1.6 }}>{notes}</div>
               </div>
-
               <button
                 onClick={generateQuotePdf}
                 style={{ width: "100%", padding: "12px 14px", borderRadius: 14, border: "none", background: "#0f172a", color: "white", fontWeight: 700, cursor: "pointer" }}
