@@ -552,7 +552,7 @@ autoTable(doc, {
                       setSelectedGarmentId(garmentCatalog[value][0].id);
                     }}
                   >
-                    <option value="tees">Tees</option>
+                    <option value="tees">Tees/Tanks</option>
                     <option value="hoodies">Hoodies</option>
                     <option value="polos">Polos</option>
                     <option value="bottoms">Bottoms</option>
