@@ -641,18 +641,10 @@ export default function App() {
     doc.save(`${slugify(quoteName)}.pdf`);
   };
 
-  const saveButtonLabel = saveStatus === "saving" ? "Saving…"
-    : saveStatus === "saved" ? "✓ Saved!"
+  const pdfButtonLabel = saveStatus === "saving" ? "Saving…"
+    : saveStatus === "saved" ? "✓ Saved & PDF Generated!"
     : saveStatus === "error" ? "Error — retry"
-    : "Save Quote";
-
-  const saveButtonStyle = {
-    ...buttonStyle,
-    background: saveStatus === "saved" ? "#16a34a" : saveStatus === "error" ? "#dc2626" : "white",
-    color: saveStatus === "saved" || saveStatus === "error" ? "white" : "#0f172a",
-    borderColor: saveStatus === "saved" ? "#16a34a" : saveStatus === "error" ? "#dc2626" : "#cbd5e1",
-    transition: "all 0.2s",
-  };
+    : "Generate Customer Quote PDF";
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", padding: 24, fontFamily: "Inter, Arial, sans-serif", color: "#0f172a" }}>
@@ -673,9 +665,6 @@ export default function App() {
               </button>
               <button style={buttonStyle} onClick={() => setDrawerOpen(true)}>
                 <List size={16} style={{ marginRight: 8, verticalAlign: "middle" }} /> View Quotes
-              </button>
-              <button style={saveButtonStyle} onClick={saveQuote} disabled={saveStatus === "saving"}>
-                <Save size={16} style={{ marginRight: 8, verticalAlign: "middle" }} /> {saveButtonLabel}
               </button>
             </div>
           </div>
@@ -933,10 +922,15 @@ export default function App() {
                 <div style={{ color: "#475569", fontSize: 14, lineHeight: 1.6 }}>{notes}</div>
               </div>
               <button
-                onClick={generateQuotePdf}
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 14, border: "none", background: "#0f172a", color: "white", fontWeight: 700, cursor: "pointer" }}
+                onClick={async () => { await saveQuote(); generateQuotePdf(); }}
+                disabled={saveStatus === "saving"}
+                style={{
+                  width: "100%", padding: "12px 14px", borderRadius: 14, border: "none",
+                  background: saveStatus === "saved" ? "#16a34a" : saveStatus === "error" ? "#dc2626" : "#0f172a",
+                  color: "white", fontWeight: 700, cursor: "pointer", transition: "background 0.2s",
+                }}
               >
-                Generate Customer Quote PDF
+                {pdfButtonLabel}
               </button>
             </div>
           </div>
