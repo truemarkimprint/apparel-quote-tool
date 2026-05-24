@@ -404,11 +404,9 @@ export default function App() {
   const effectiveQuantity = totalSizeQty;
   const selectedTier = useMemo(() => getTierForQty(effectiveQuantity, tiers), [effectiveQuantity, tiers]);
 
-  const garmentCostEach = useMemo(() => {
-    const base = safeNum(selectedGarment?.baseCost);
-    const tierAdj = garmentType === "hats" ? 0 : safeNum(selectedTier?.garmentCostAdj);
-    return Math.max(0, round2(base + tierAdj));
-  }, [selectedGarment, selectedTier, garmentType]);
+ const garmentCostEach = useMemo(() => {
+    return Math.max(0, round2(safeNum(selectedGarment?.baseCost)));
+  }, [selectedGarment]);
 
   const decorationCostEach = useMemo(() => {
     const hasFront = frontPrint !== "none";
