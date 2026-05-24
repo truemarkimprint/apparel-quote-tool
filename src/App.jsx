@@ -13,15 +13,15 @@ const supabase = createClient(
 
 const garmentCatalog = {
   tees: [
-    { id: "g500", label: "Budget Tee — Gildan G500 (Standard Cotton)", baseCost: 2.49, premium: false },
-    { id: "g3933", label: "Tank Top — NxtLvl 3933 (Standard Cotton)", baseCost: 4.62, premium: false },
-    { id: "pc54", label: "Value Tee — Port & Company PC54 (Softer Cotton)", baseCost: 2.44, premium: false },
-    { id: "n3600", label: "Soft Tee — Next Level 3600 (Retail Fit)", baseCost: 4.03, premium: true },
-    { id: "3001", label: "Premium Tee — Bella+Canvas 3001 (Best Seller)", baseCost: 4.03, premium: true },
+    { id: "g500", label: "Budget Tee — Gildan G500 (Standard Cotton)", baseCost: 5.25, premium: false },
+    { id: "g3933", label: "Tank Top — NxtLvl 3933 (Standard Cotton)", baseCost: 4.97, premium: false },
+    { id: "pc54", label: "Value Tee — Port & Company PC54 (Softer Cotton)", baseCost: 5.95, premium: false },
+    { id: "n3600", label: "Soft Tee — Next Level 3600 (Retail Fit)", baseCost: 7.75, premium: true },
+    { id: "3001", label: "Premium Tee — Bella+Canvas 3001 (Best Seller)", baseCost: 8.5, premium: true },
     { id: "dm130", label: "Triblend Tee — District DM130 (Ultra Soft)", baseCost: 3.99, premium: true },
-    { id: "g2400", label: "LS Tee — Gildan G2400 (Ultra Cotton)", baseCost: 4.69, premium: true },
-    { id: "g5400", label: "LS Tee — Gildan G5400 (Heavy Cotton)", baseCost: 5.28, premium: false },
-    { id: "c1717", label: "Heavyweight Tee — Comfort Colors 1717 (Garment Dyed)", baseCost: 6.29, premium: true },
+    { id: "g2400", label: "LS Tee — Gildan G2400 (Ultra Cotton)", baseCost: 6.56, premium: true },
+    { id: "g5400", label: "LS Tee — Gildan G5400 (Heavy Cotton)", baseCost: 5.93, premium: false },
+    { id: "c1717", label: "Heavyweight Tee — Comfort Colors 1717 (Garment Dyed)", baseCost: 9.5, premium: true },
   ],
   bottoms: [
     { id: "lst311", label: "Shorts — Sport-Tek LST311 Womens Jersey Knit Squad Short", baseCost: 6.33, premium: false },
@@ -404,9 +404,11 @@ export default function App() {
   const effectiveQuantity = totalSizeQty;
   const selectedTier = useMemo(() => getTierForQty(effectiveQuantity, tiers), [effectiveQuantity, tiers]);
 
- const garmentCostEach = useMemo(() => {
-    return Math.max(0, round2(safeNum(selectedGarment?.baseCost)));
-  }, [selectedGarment]);
+  const garmentCostEach = useMemo(() => {
+    const base = safeNum(selectedGarment?.baseCost);
+    const tierAdj = garmentType === "hats" ? 0 : safeNum(selectedTier?.garmentCostAdj);
+    return Math.max(0, round2(base + tierAdj));
+  }, [selectedGarment, selectedTier, garmentType]);
 
   const decorationCostEach = useMemo(() => {
     const hasFront = frontPrint !== "none";
@@ -579,8 +581,8 @@ export default function App() {
     doc.text(`Quantity: ${effectiveQuantity}`, 14, 68);
     doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 14, 38, { align: "right" });
 
-    // Size breakdown table
-    const sizeRows = [
+    // Size breakdown table — sizes on top row, quantities below
+    const allSizes = [
       ["XS", qtyXS], ["S", qtyS], ["M", qtyM], ["L", qtyL],
       ["XL", qtyXL], ["2XL", qty2xl], ["3XL", qty3xl], ["4XL", qty4xl],
     ].filter(([, v]) => safeNum(v) > 0);
@@ -588,14 +590,11 @@ export default function App() {
     autoTable(doc, {
       startY: 75,
       theme: "grid",
-      head: [["Size", "Qty", "Size", "Qty", "Size", "Qty", "Size", "Qty"]],
-      body: [sizeRows.reduce((acc, [sz, qty], i) => {
-        acc[i * 2] = sz;
-        acc[i * 2 + 1] = String(safeNum(qty));
-        return acc;
-      }, Array(8).fill(""))],
-      styles: { fontSize: 9, cellPadding: 2, halign: "center" },
-      headStyles: { fillColor: [15, 23, 42] },
+      head: [["Size", ...allSizes.map(([sz]) => sz)]],
+      body: [["Qty", ...allSizes.map(([, v]) => String(safeNum(v)))]],
+      styles: { fontSize: 10, cellPadding: 4, halign: "center" },
+      headStyles: { fillColor: [15, 23, 42], fontStyle: "bold" },
+      bodyStyles: { fontStyle: "bold" },
     });
 
     autoTable(doc, {
