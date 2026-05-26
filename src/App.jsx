@@ -377,10 +377,9 @@ function SavedQuotesDrawer({ open, onClose, highlightId }) {
     fetchQuotes();
   }
 
-  async function createOrder(quote) {
-    const { data: countData } = await supabase.from("orders").select("id", { count: "exact" });
-    const count = (countData?.length || 0) + 1;
-    const orderNumber = `TM-${String(count).padStart(3, "0")}`;
+ async function createOrder(quote) {
+    const { data: seqData } = await supabase.rpc("next_order_number");
+    const orderNumber = seqData || "TM-000";
     await supabase.from("orders").insert([{
       order_number: orderNumber,
       quote_id: quote.id,
