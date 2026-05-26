@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import logo from "./assets/TrueMark Single logo.png";
 import autoTable from "jspdf-autotable";
-import { Calculator, Shirt, RefreshCcw, Package, FileText, List, X, CheckCircle, Clock, XCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Calculator, Shirt, RefreshCcw, Package, FileText, List, X, CheckCircle, Clock, XCircle, ChevronDown, ChevronUp, ClipboardList } from "lucide-react";
 import { motion } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
 
@@ -10,6 +10,14 @@ const supabase = createClient(
   "https://zbnpewjafbztidohytjh.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpibnBld2phZmJ6dGlkb2h5dGpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODU5ODQsImV4cCI6MjA5NTE2MTk4NH0.iblJDKPf5oS1M695FmjRDaG3AQES0l_QM-3eiBoBlbg"
 );
+
+const ORDER_STAGES = [
+  "Order Created",
+  "In Production",
+  "Quality Check",
+  "Ready",
+  "Pickup / Shipped / Delivered",
+];
 
 const garmentCatalog = {
   tees: [
@@ -57,42 +65,30 @@ const cardStyle = {
   background: "white", borderRadius: 20, padding: 24,
   boxShadow: "0 8px 30px rgba(15,23,42,0.08)", border: "1px solid #e2e8f0",
 };
-
 const inputStyle = {
   width: "100%", padding: "10px 12px", borderRadius: 12,
   border: "1px solid #cbd5e1", fontSize: 14, boxSizing: "border-box",
 };
-
 const readOnlyStyle = {
   ...inputStyle, background: "#f1f5f9", color: "#0f172a",
   display: "flex", alignItems: "center", minHeight: 42,
 };
-
-const labelStyle = {
-  display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 8,
-};
-
+const labelStyle = { display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 8 };
 const buttonStyle = {
   padding: "10px 14px", borderRadius: 12, border: "1px solid #cbd5e1",
   background: "white", color: "#0f172a", cursor: "pointer", fontWeight: 600,
 };
 
 function currency(value) {
-  const num = Number(value || 0);
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(num);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(value || 0));
 }
-
 function safeNum(value) {
-  const parsed = parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : 0;
+  const p = parseFloat(value); return Number.isFinite(p) ? p : 0;
 }
-
 function round2(n) { return Math.round(n * 100) / 100; }
-
 function slugify(value) {
   return (value || "quote").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }
-
 function getTierForQty(qty, tiers) {
   return tiers.find((t) => qty >= safeNum(t.minQty) && qty <= safeNum(t.maxQty));
 }
@@ -100,21 +96,13 @@ function getTierForQty(qty, tiers) {
 function SectionTitle({ icon: Icon, children }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-      <Icon size={20} />
-      <h2 style={{ margin: 0, fontSize: 22 }}>{children}</h2>
+      <Icon size={20} /><h2 style={{ margin: 0, fontSize: 22 }}>{children}</h2>
     </div>
   );
 }
-
 function Field({ label, children }) {
-  return (
-    <div>
-      <label style={labelStyle}>{label}</label>
-      {children}
-    </div>
-  );
+  return <div><label style={labelStyle}>{label}</label>{children}</div>;
 }
-
 function SummaryRow({ label, value, bold = false }) {
   return (
     <div style={{
@@ -147,13 +135,219 @@ function StatusBadge({ status }) {
   );
 }
 
+function StageBadge({ stage }) {
+  const stageColors = {
+    "Order Created":              { color: "#0369a1", bg: "#e0f2fe" },
+    "In Production":              { color: "#7c3aed", bg: "#ede9fe" },
+    "Quality Check":              { color: "#d97706", bg: "#fef3c7" },
+    "Ready":                      { color: "#16a34a", bg: "#dcfce7" },
+    "Pickup / Shipped / Delivered": { color: "#0f172a", bg: "#f1f5f9" },
+  };
+  const c = stageColors[stage] || { color: "#64748b", bg: "#f1f5f9" };
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      padding: "2px 10px", borderRadius: 99, fontSize: 12, fontWeight: 600,
+      color: c.color, background: c.bg,
+    }}>
+      {stage}
+    </span>
+  );
+}
+
+// ── Orders Drawer ────────────────────────────────────────────────────────────
+function OrdersDrawer({ open, onClose, onViewQuote }) {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
+  const [stageNote, setStageNote] = useState({});
+
+  useEffect(() => { if (open) fetchOrders(); }, [open]);
+
+  async function fetchOrders() {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("orders").select("*").order("created_at", { ascending: false });
+    if (!error) setOrders(data || []);
+    setLoading(false);
+  }
+
+  async function updateStage(id, stage) {
+    await supabase.from("orders").update({
+      stage, stage_updated_at: new Date().toISOString(),
+    }).eq("id", id);
+    fetchOrders();
+  }
+
+  async function deleteOrder(id) {
+    if (!window.confirm("Delete this order? This can't be undone.")) return;
+    await supabase.from("orders").delete().eq("id", id);
+    if (expandedId === id) setExpandedId(null);
+    fetchOrders();
+  }
+
+  if (!open) return null;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", justifyContent: "flex-end" }}>
+      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)" }} />
+      <motion.div
+        initial={{ x: "100%" }} animate={{ x: 0 }}
+        transition={{ type: "spring", damping: 28, stiffness: 260 }}
+        style={{
+          position: "relative", width: 580, maxWidth: "95vw",
+          background: "white", height: "100%", overflowY: "auto",
+          padding: 28, boxShadow: "-8px 0 40px rgba(0,0,0,0.15)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <h2 style={{ margin: 0, fontSize: 22 }}>Active Orders</h2>
+          <button onClick={onClose} style={{ ...buttonStyle, padding: "6px 10px" }}><X size={18} /></button>
+        </div>
+
+        {loading && <p style={{ color: "#64748b" }}>Loading orders…</p>}
+        {!loading && orders.length === 0 && (
+          <p style={{ color: "#64748b" }}>No orders yet. Mark a quote as Approved to create an order.</p>
+        )}
+
+        {orders.map((o) => {
+          const isOpen = expandedId === o.id;
+          const currentStageIdx = ORDER_STAGES.indexOf(o.stage);
+          return (
+            <div key={o.id} style={{
+              border: "1px solid #e2e8f0", borderRadius: 16,
+              marginBottom: 12, background: "#fafafa", overflow: "hidden",
+            }}>
+              {/* Collapsed header */}
+              <div
+                onClick={() => setExpandedId(isOpen ? null : o.id)}
+                style={{
+                  padding: "14px 18px", cursor: "pointer",
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  background: isOpen ? "#f1f5f9" : "#fafafa",
+                  borderBottom: isOpen ? "1px solid #e2e8f0" : "none",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                    <span style={{ fontWeight: 800, fontSize: 14, color: "#0f172a", fontFamily: "monospace" }}>
+                      {o.order_number}
+                    </span>
+                    <span style={{ fontWeight: 600, fontSize: 15, color: "#0f172a" }}>{o.quote_name}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#64748b" }}>
+                    {o.customer_name || "No customer"} · Qty: {o.total_qty} · {currency(o.final_total)}
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: 12 }}>
+                  <StageBadge stage={o.stage} />
+                  {isOpen ? <ChevronUp size={16} color="#64748b" /> : <ChevronDown size={16} color="#64748b" />}
+                </div>
+              </div>
+
+              {/* Expanded */}
+              {isOpen && (
+                <div style={{ padding: 18 }}>
+                  {/* Order summary */}
+                  <div style={{ background: "#0f172a", color: "white", borderRadius: 14, padding: "12px 16px", marginBottom: 14, display: "flex", justifyContent: "space-between" }}>
+                    <div>
+                      <div style={{ color: "#94a3b8", fontSize: 11 }}>ORDER</div>
+                      <div style={{ fontWeight: 800, fontSize: 18, fontFamily: "monospace" }}>{o.order_number}</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ color: "#94a3b8", fontSize: 11 }}>PRICE / PC</div>
+                      <div style={{ fontWeight: 700, fontSize: 16 }}>{currency(o.price_per_piece)}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ color: "#94a3b8", fontSize: 11 }}>TOTAL</div>
+                      <div style={{ fontWeight: 700, fontSize: 16 }}>{currency(o.final_total)}</div>
+                    </div>
+                  </div>
+
+                  {/* Order details */}
+                  <div style={{ background: "white", borderRadius: 12, padding: "8px 12px", border: "1px solid #e2e8f0", marginBottom: 14, fontSize: 13 }}>
+                    {[
+                      ["Customer", o.customer_name || "—"],
+                      ["Garment", o.garment_label || "—"],
+                      ["Quantity", o.total_qty],
+                      ["Sales Rep", o.sales_rep],
+                      ["Created", new Date(o.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })],
+                      ["Stage Updated", new Date(o.stage_updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })],
+                    ].map(([label, value]) => (
+                      <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #f1f5f9" }}>
+                        <span style={{ color: "#475569" }}>{label}</span>
+                        <span style={{ fontWeight: 600 }}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Stage progress */}
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 8 }}>Production Stage</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {ORDER_STAGES.map((stage, idx) => (
+                        <button
+                          key={stage}
+                          onClick={() => updateStage(o.id, stage)}
+                          style={{
+                            ...buttonStyle,
+                            padding: "8px 14px",
+                            fontSize: 13,
+                            textAlign: "left",
+                            background: o.stage === stage ? "#0f172a" : idx < currentStageIdx ? "#f8fafc" : "white",
+                            color: o.stage === stage ? "white" : idx < currentStageIdx ? "#94a3b8" : "#0f172a",
+                            borderColor: o.stage === stage ? "#0f172a" : "#e2e8f0",
+                            display: "flex", alignItems: "center", gap: 8,
+                          }}
+                        >
+                          <span style={{
+                            width: 20, height: 20, borderRadius: "50%", fontSize: 11, fontWeight: 700,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            background: o.stage === stage ? "white" : idx < currentStageIdx ? "#cbd5e1" : "#e2e8f0",
+                            color: o.stage === stage ? "#0f172a" : "#64748b",
+                            flexShrink: 0,
+                          }}>
+                            {idx < currentStageIdx ? "✓" : idx + 1}
+                          </span>
+                          {stage}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Link back to quote */}
+                  <button
+                    onClick={() => { onViewQuote(o.quote_id); onClose(); }}
+                    style={{ ...buttonStyle, width: "100%", marginBottom: 10, fontSize: 13, textAlign: "center" }}
+                  >
+                    View Original Quote
+                  </button>
+
+                  {/* Delete */}
+                  <button
+                    onClick={() => deleteOrder(o.id)}
+                    style={{ ...buttonStyle, width: "100%", fontSize: 13, color: "#dc2626", borderColor: "#fca5a5" }}
+                  >
+                    Delete Order
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </motion.div>
+    </div>
+  );
+}
+
 // ── Saved Quotes Drawer ──────────────────────────────────────────────────────
-function SavedQuotesDrawer({ open, onClose }) {
+function SavedQuotesDrawer({ open, onClose, highlightId }) {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => { if (open) fetchQuotes(); }, [open]);
+  useEffect(() => { if (highlightId) setExpandedId(highlightId); }, [highlightId]);
 
   async function fetchQuotes() {
     setLoading(true);
@@ -163,8 +357,33 @@ function SavedQuotesDrawer({ open, onClose }) {
   }
 
   async function updateStatus(id, status) {
+    if (status === "approved") {
+      const quote = quotes.find((q) => q.id === id);
+      if (quote) await createOrder(quote);
+    }
     await supabase.from("quotes").update({ status }).eq("id", id);
     fetchQuotes();
+  }
+
+  async function createOrder(quote) {
+    // Get next order number
+    const { data: countData } = await supabase.from("orders").select("id", { count: "exact" });
+    const count = (countData?.length || 0) + 1;
+    const orderNumber = `TM-${String(count).padStart(3, "0")}`;
+
+    await supabase.from("orders").insert([{
+      order_number: orderNumber,
+      quote_id: quote.id,
+      quote_name: quote.quote_name,
+      customer_name: quote.customer_name,
+      sales_rep: quote.sales_rep,
+      garment_label: quote.garment_label,
+      total_qty: quote.total_qty,
+      price_per_piece: quote.price_per_piece,
+      final_total: quote.final_total,
+      stage: "Order Created",
+      notes: quote.notes,
+    }]);
   }
 
   async function deleteQuote(id) {
@@ -202,10 +421,9 @@ function SavedQuotesDrawer({ open, onClose }) {
           const isOpen = expandedId === q.id;
           return (
             <div key={q.id} style={{
-              border: "1px solid #e2e8f0", borderRadius: 16,
-              marginBottom: 12, background: "#fafafa", overflow: "hidden",
+              border: isOpen && highlightId === q.id ? "2px solid #0f172a" : "1px solid #e2e8f0",
+              borderRadius: 16, marginBottom: 12, background: "#fafafa", overflow: "hidden",
             }}>
-              {/* Collapsed header — always visible, click to toggle */}
               <div
                 onClick={() => setExpandedId(isOpen ? null : q.id)}
                 style={{
@@ -227,26 +445,19 @@ function SavedQuotesDrawer({ open, onClose }) {
                 </div>
               </div>
 
-              {/* Expanded detail */}
               {isOpen && (
                 <div style={{ padding: 18 }}>
-                  {/* Size breakdown */}
                   <div style={{ background: "#f8fafc", borderRadius: 10, padding: "8px 12px", marginBottom: 12, fontSize: 12, color: "#475569" }}>
                     <span style={{ fontWeight: 600, color: "#0f172a", marginRight: 8 }}>Sizes:</span>
                     {[
                       ["XS", q.qty_xs], ["S", q.qty_s], ["M", q.qty_m],
                       ["L", q.qty_l], ["XL", q.qty_xl], ["2XL", q.qty_2xl],
                       ["3XL", q.qty_3xl], ["4XL", q.qty_4xl],
-                    ].filter(([, v]) => safeNum(v) > 0).map(([label, v]) => `${label}: ${v}`).join(" · ")}
+                    ].filter(([, v]) => safeNum(v) > 0).map(([l, v]) => `${l}: ${v}`).join(" · ")}
                     <span style={{ marginLeft: 8, fontWeight: 600, color: "#0f172a" }}>(Total: {q.total_qty})</span>
                   </div>
 
-                  {/* Sell price highlight */}
-                  <div style={{
-                    background: "#0f172a", color: "white", borderRadius: 14,
-                    padding: "12px 16px", marginBottom: 12,
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                  }}>
+                  <div style={{ background: "#0f172a", color: "white", borderRadius: 14, padding: "12px 16px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <div style={{ color: "#94a3b8", fontSize: 11 }}>PRICE / PC</div>
                       <div style={{ fontWeight: 800, fontSize: 22 }}>{currency(q.price_per_piece)}</div>
@@ -257,7 +468,6 @@ function SavedQuotesDrawer({ open, onClose }) {
                     </div>
                   </div>
 
-                  {/* Full internal breakdown */}
                   <div style={{ background: "white", borderRadius: 12, padding: "8px 12px", border: "1px solid #e2e8f0", marginBottom: 12 }}>
                     {[
                       ["Garment", q.garment_label || q.garment_type],
@@ -273,17 +483,13 @@ function SavedQuotesDrawer({ open, onClose }) {
                       ["Overhead (" + q.overhead_pct + "%)", currency(q.overhead)],
                       ["Profit (" + q.profit_margin_pct + "%)", currency(q.profit)],
                     ].map(([label, value]) => (
-                      <div key={label} style={{
-                        display: "flex", justifyContent: "space-between",
-                        padding: "5px 0", fontSize: 13, borderBottom: "1px solid #f1f5f9",
-                      }}>
+                      <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: 13, borderBottom: "1px solid #f1f5f9" }}>
                         <span style={{ color: "#475569" }}>{label}</span>
                         <span style={{ fontWeight: 600, color: "#0f172a" }}>{value}</span>
                       </div>
                     ))}
                     <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13, fontWeight: 700 }}>
-                      <span>Subtotal</span>
-                      <span>{currency(q.subtotal)}</span>
+                      <span>Subtotal</span><span>{currency(q.subtotal)}</span>
                     </div>
                     <div style={{ fontSize: 12, color: "#94a3b8", paddingTop: 4 }}>
                       Tax: {q.include_tax ? `${q.sales_tax_pct}%` : "none"}
@@ -291,7 +497,6 @@ function SavedQuotesDrawer({ open, onClose }) {
                     </div>
                   </div>
 
-                  {/* Status buttons + delete */}
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {["draft", "sent", "approved", "declined"].map((s) => (
@@ -316,6 +521,11 @@ function SavedQuotesDrawer({ open, onClose }) {
                       Delete
                     </button>
                   </div>
+                  {q.status === "approved" && (
+                    <div style={{ marginTop: 10, fontSize: 12, color: "#16a34a", fontWeight: 600 }}>
+                      ✓ Order created automatically when approved
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -376,7 +586,9 @@ export default function App() {
   );
 
   const [saveStatus, setSaveStatus] = useState(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [quotesOpen, setQuotesOpen] = useState(false);
+  const [ordersOpen, setOrdersOpen] = useState(false);
+  const [highlightQuoteId, setHighlightQuoteId] = useState(null);
 
   const garmentOptions = garmentCatalog[garmentType] || [];
   const selectedGarment = garmentOptions.find((g) => g.id === selectedGarmentId) || garmentOptions[0];
@@ -391,8 +603,7 @@ export default function App() {
   const selectedTier = useMemo(() => getTierForQty(effectiveQuantity, tiers), [effectiveQuantity, tiers]);
 
   const garmentCostEach = useMemo(() =>
-    Math.max(0, round2(safeNum(selectedGarment?.baseCost))),
-    [selectedGarment]
+    Math.max(0, round2(safeNum(selectedGarment?.baseCost))), [selectedGarment]
   );
 
   const decorationCostEach = useMemo(() => {
@@ -607,8 +818,11 @@ export default function App() {
               <button style={buttonStyle} onClick={resetDefaults}>
                 <RefreshCcw size={16} style={{ marginRight: 8, verticalAlign: "middle" }} /> Reset
               </button>
-              <button style={buttonStyle} onClick={() => setDrawerOpen(true)}>
+              <button style={buttonStyle} onClick={() => setQuotesOpen(true)}>
                 <List size={16} style={{ marginRight: 8, verticalAlign: "middle" }} /> View Quotes
+              </button>
+              <button style={buttonStyle} onClick={() => setOrdersOpen(true)}>
+                <ClipboardList size={16} style={{ marginRight: 8, verticalAlign: "middle" }} /> View Orders
               </button>
             </div>
           </div>
@@ -620,15 +834,9 @@ export default function App() {
               <SectionTitle icon={Calculator}>Quote Builder</SectionTitle>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }}>
-                <Field label="Quote Name">
-                  <input style={inputStyle} value={quoteName} onChange={(e) => setQuoteName(e.target.value)} />
-                </Field>
-                <Field label="Customer">
-                  <input style={inputStyle} value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Client / organization" />
-                </Field>
-                <Field label="Sales Rep">
-                  <input style={inputStyle} value={salesRep} onChange={(e) => setSalesRep(e.target.value)} />
-                </Field>
+                <Field label="Quote Name"><input style={inputStyle} value={quoteName} onChange={(e) => setQuoteName(e.target.value)} /></Field>
+                <Field label="Customer"><input style={inputStyle} value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Client / organization" /></Field>
+                <Field label="Sales Rep"><input style={inputStyle} value={salesRep} onChange={(e) => setSalesRep(e.target.value)} /></Field>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }}>
@@ -643,29 +851,21 @@ export default function App() {
                 </Field>
                 <Field label="Garment Style">
                   <select style={inputStyle} value={selectedGarmentId} onChange={(e) => setSelectedGarmentId(e.target.value)}>
-                    {garmentOptions.map((item) => (
-                      <option key={item.id} value={item.id}>{item.label}</option>
-                    ))}
+                    {garmentOptions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
                   </select>
                 </Field>
-                <Field label="Total Quantity">
-                  <div style={readOnlyStyle}>{effectiveQuantity}</div>
-                </Field>
+                <Field label="Total Quantity"><div style={readOnlyStyle}>{effectiveQuantity}</div></Field>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }}>
                 <Field label="Front Print">
                   <select style={inputStyle} value={frontPrint} onChange={(e) => setFrontPrint(e.target.value)}>
-                    <option value="none">None</option>
-                    <option value="1">1 Color</option>
-                    <option value="full">Full Color</option>
+                    <option value="none">None</option><option value="1">1 Color</option><option value="full">Full Color</option>
                   </select>
                 </Field>
                 <Field label="Back Print">
                   <select style={inputStyle} value={backPrint} onChange={(e) => setBackPrint(e.target.value)}>
-                    <option value="none">None</option>
-                    <option value="1">1 Color</option>
-                    <option value="full">Full Color</option>
+                    <option value="none">None</option><option value="1">1 Color</option><option value="full">Full Color</option>
                   </select>
                 </Field>
                 <div style={{ display: "flex", alignItems: "end" }}>
@@ -677,18 +877,10 @@ export default function App() {
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 16 }}>
-                <Field label="Front Print Cost">
-                  <input style={inputStyle} type="number" value={frontPrintCost} onChange={(e) => setFrontPrintCost(e.target.value)} />
-                </Field>
-                <Field label="Back Print Cost">
-                  <input style={inputStyle} type="number" value={backPrintCost} onChange={(e) => setBackPrintCost(e.target.value)} />
-                </Field>
-                <Field label="Front + Back Combo">
-                  <input style={inputStyle} type="number" value={frontBackComboCost} onChange={(e) => setFrontBackComboCost(e.target.value)} />
-                </Field>
-                <Field label="Sleeve Print Cost">
-                  <input style={inputStyle} type="number" value={sleevePrintCost} onChange={(e) => setSleevePrintCost(e.target.value)} />
-                </Field>
+                <Field label="Front Print Cost"><input style={inputStyle} type="number" value={frontPrintCost} onChange={(e) => setFrontPrintCost(e.target.value)} /></Field>
+                <Field label="Back Print Cost"><input style={inputStyle} type="number" value={backPrintCost} onChange={(e) => setBackPrintCost(e.target.value)} /></Field>
+                <Field label="Front + Back Combo"><input style={inputStyle} type="number" value={frontBackComboCost} onChange={(e) => setFrontBackComboCost(e.target.value)} /></Field>
+                <Field label="Sleeve Print Cost"><input style={inputStyle} type="number" value={sleevePrintCost} onChange={(e) => setSleevePrintCost(e.target.value)} /></Field>
               </div>
 
               <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Size Breakdown</div>
@@ -710,15 +902,9 @@ export default function App() {
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }}>
-                <Field label="2XL Upcharge">
-                  <input style={inputStyle} type="number" value={upcharge2xl} onChange={(e) => setUpcharge2xl(e.target.value)} />
-                </Field>
-                <Field label="3XL Upcharge">
-                  <input style={inputStyle} type="number" value={upcharge3xl} onChange={(e) => setUpcharge3xl(e.target.value)} />
-                </Field>
-                <Field label="4XL Upcharge">
-                  <input style={inputStyle} type="number" value={upcharge4xl} onChange={(e) => setUpcharge4xl(e.target.value)} />
-                </Field>
+                <Field label="2XL Upcharge"><input style={inputStyle} type="number" value={upcharge2xl} onChange={(e) => setUpcharge2xl(e.target.value)} /></Field>
+                <Field label="3XL Upcharge"><input style={inputStyle} type="number" value={upcharge3xl} onChange={(e) => setUpcharge3xl(e.target.value)} /></Field>
+                <Field label="4XL Upcharge"><input style={inputStyle} type="number" value={upcharge4xl} onChange={(e) => setUpcharge4xl(e.target.value)} /></Field>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 16 }}>
@@ -823,8 +1009,7 @@ export default function App() {
                 <div style={{ fontSize: 40, fontWeight: 800, marginTop: 8 }}>{currency(calculations.pricePerPiece)}</div>
                 <div style={{ color: "#cbd5e1", fontSize: 14 }}>per piece</div>
                 <div style={{ borderTop: "1px solid #334155", marginTop: 16, paddingTop: 16, fontSize: 14, display: "flex", justifyContent: "space-between" }}>
-                  <span>Total Project</span>
-                  <strong>{currency(calculations.displayTotal)}</strong>
+                  <span>Total Project</span><strong>{currency(calculations.displayTotal)}</strong>
                 </div>
               </div>
               <div style={{ marginBottom: 16 }}>
@@ -847,7 +1032,20 @@ export default function App() {
         </div>
       </div>
 
-      <SavedQuotesDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <SavedQuotesDrawer
+        open={quotesOpen}
+        onClose={() => { setQuotesOpen(false); setHighlightQuoteId(null); }}
+        highlightId={highlightQuoteId}
+      />
+      <OrdersDrawer
+        open={ordersOpen}
+        onClose={() => setOrdersOpen(false)}
+        onViewQuote={(quoteId) => {
+          setHighlightQuoteId(quoteId);
+          setOrdersOpen(false);
+          setQuotesOpen(true);
+        }}
+      />
     </div>
   );
 }
