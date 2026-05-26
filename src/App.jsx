@@ -17,6 +17,8 @@ const ORDER_STAGES = [
   "Quality Check",
   "Ready",
   "Pickup / Shipped / Delivered",
+  "Completed",
+  "Cancelled",
 ];
 
 const garmentCatalog = {
@@ -137,11 +139,13 @@ function StatusBadge({ status }) {
 
 function StageBadge({ stage }) {
   const stageColors = {
-    "Order Created":              { color: "#0369a1", bg: "#e0f2fe" },
-    "In Production":              { color: "#7c3aed", bg: "#ede9fe" },
-    "Quality Check":              { color: "#d97706", bg: "#fef3c7" },
-    "Ready":                      { color: "#16a34a", bg: "#dcfce7" },
+    "Order Created":                { color: "#0369a1", bg: "#e0f2fe" },
+    "In Production":                { color: "#7c3aed", bg: "#ede9fe" },
+    "Quality Check":                { color: "#d97706", bg: "#fef3c7" },
+    "Ready":                        { color: "#16a34a", bg: "#dcfce7" },
     "Pickup / Shipped / Delivered": { color: "#0f172a", bg: "#f1f5f9" },
+    "Completed":                    { color: "#16a34a", bg: "#dcfce7" },
+    "Cancelled":                    { color: "#dc2626", bg: "#fee2e2" },
   };
   const c = stageColors[stage] || { color: "#64748b", bg: "#f1f5f9" };
   return (
