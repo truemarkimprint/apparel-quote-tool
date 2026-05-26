@@ -18,7 +18,6 @@ const ORDER_STAGES = [
   "Ready",
   "Pickup / Shipped / Delivered",
   "Completed",
-  "Cancelled",
 ];
 
 const garmentCatalog = {
@@ -164,7 +163,6 @@ function OrdersDrawer({ open, onClose, onViewQuote }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
-  const [stageNote, setStageNote] = useState({});
 
   useEffect(() => { if (open) fetchOrders(); }, [open]);
 
@@ -287,7 +285,19 @@ function OrdersDrawer({ open, onClose, onViewQuote }) {
 
                   {/* Stage progress */}
                   <div style={{ marginBottom: 14 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 8 }}>Production Stage</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Production Stage</div>
+                      <button
+                        onClick={() => updateStage(o.id, "Cancelled")}
+                        style={{
+                          ...buttonStyle, padding: "4px 12px", fontSize: 12,
+                          color: "#dc2626", borderColor: "#fca5a5",
+                          background: o.stage === "Cancelled" ? "#fee2e2" : "white",
+                        }}
+                      >
+                        Cancel Order
+                      </button>
+                    </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {ORDER_STAGES.map((stage, idx) => (
                         <button
@@ -295,9 +305,7 @@ function OrdersDrawer({ open, onClose, onViewQuote }) {
                           onClick={() => updateStage(o.id, stage)}
                           style={{
                             ...buttonStyle,
-                            padding: "8px 14px",
-                            fontSize: 13,
-                            textAlign: "left",
+                            padding: "8px 14px", fontSize: 13, textAlign: "left",
                             background: o.stage === stage ? "#0f172a" : idx < currentStageIdx ? "#f8fafc" : "white",
                             color: o.stage === stage ? "white" : idx < currentStageIdx ? "#94a3b8" : "#0f172a",
                             borderColor: o.stage === stage ? "#0f172a" : "#e2e8f0",
@@ -370,11 +378,9 @@ function SavedQuotesDrawer({ open, onClose, highlightId }) {
   }
 
   async function createOrder(quote) {
-    // Get next order number
     const { data: countData } = await supabase.from("orders").select("id", { count: "exact" });
     const count = (countData?.length || 0) + 1;
     const orderNumber = `TM-${String(count).padStart(3, "0")}`;
-
     await supabase.from("orders").insert([{
       order_number: orderNumber,
       quote_id: quote.id,
