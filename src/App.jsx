@@ -33,7 +33,7 @@ const garmentCatalog = {
     { id: "c1717", label: "Heavyweight Tee — Comfort Colors 1717 (Garment Dyed)", baseCost: 9.5, premium: true },
   ],
   bottoms: [
-    { id: "lst311", label: "Shorts — Sport-Tek LST311 Womens Jersey Knit Squad Short", baseCost: 6.33, premium: false },
+    { id: "lst311", label: "Shorts — Sport-Tek LST311 Womens Jersey Knit Squad Short", baseCost: 5.98, premium: false },
   ],
   hoodies: [
     { id: "g185", label: "Budget Hoodie — Gildan G185", baseCost: 17.5, premium: false },
