@@ -13,6 +13,7 @@ const supabase = createClient(
 
 const ORDER_STAGES = [
   "Order Created",
+  "Materials Ordered",
   "In Production",
   "Quality Check",
   "Ready",
