@@ -547,6 +547,48 @@ function SavedQuotesDrawer({ open, onClose, highlightId }) {
 
 // ── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
+  const [authed, setAuthed] = useState(false);
+  const [pwInput, setPwInput] = useState("");
+  const [pwError, setPwError] = useState(false);
+
+  if (!authed) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Inter, Arial, sans-serif" }}>
+        <div style={{ background: "white", borderRadius: 20, padding: 40, boxShadow: "0 8px 30px rgba(15,23,42,0.08)", border: "1px solid #e2e8f0", width: 340 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+            <Shirt size={28} color="#0f172a" />
+            <h2 style={{ margin: 0, fontSize: 22, color: "#0f172a" }}>TrueMark Quote Tool</h2>
+          </div>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 8 }}>Password</label>
+          <input
+            type="password"
+            style={{ width: "100%", padding: "10px 12px", borderRadius: 12, border: pwError ? "1px solid #dc2626" : "1px solid #cbd5e1", fontSize: 14, boxSizing: "border-box", marginBottom: 12 }}
+            value={pwInput}
+            onChange={(e) => { setPwInput(e.target.value); setPwError(false); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (pwInput === "connect.Me!234") setAuthed(true);
+                else setPwError(true);
+              }
+            }}
+            placeholder="Enter password"
+            autoFocus
+          />
+          {pwError && <div style={{ color: "#dc2626", fontSize: 13, marginBottom: 12 }}>Incorrect password</div>}
+          <button
+            onClick={() => {
+              if (pwInput === "connect.Me!234") setAuthed(true);
+              else setPwError(true);
+            }}
+            style={{ width: "100%", padding: "11px", borderRadius: 12, border: "none", background: "#0f172a", color: "white", fontWeight: 700, cursor: "pointer", fontSize: 14 }}
+          >
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const [quoteName, setQuoteName] = useState("Spring Promo DTF Quote");
   const [customerName, setCustomerName] = useState("");
   const [salesRep, setSalesRep] = useState("EJ");
