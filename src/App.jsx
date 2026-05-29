@@ -23,7 +23,7 @@ const ORDER_STAGES = [
 const garmentCatalog = {
   tees: [
     { id: "g500", label: "Budget Tee — Gildan G500 (Standard Cotton)", baseCost: 5.25, premium: false },
-    { id: "g3933", label: "Tank Top — NxtLvl 3933 (Standard Cotton)", baseCost: 4.62, premium: false },
+    { id: "g3933", label: "Tank Top — NxtLvl 3933 (Standard Cotton)", baseCost: 4.97, premium: false },
     { id: "pc54", label: "Value Tee — Port & Company PC54 (Softer Cotton)", baseCost: 5.95, premium: false },
     { id: "n3600", label: "Soft Tee — Next Level 3600 (Retail Fit)", baseCost: 7.75, premium: true },
     { id: "3001", label: "Premium Tee — Bella+Canvas 3001 (Best Seller)", baseCost: 8.5, premium: true },
@@ -33,7 +33,7 @@ const garmentCatalog = {
     { id: "c1717", label: "Heavyweight Tee — Comfort Colors 1717 (Garment Dyed)", baseCost: 9.5, premium: true },
   ],
   bottoms: [
-    { id: "lst311", label: "Shorts — Sport-Tek LST311 Womens Jersey Knit Squad Short", baseCost: 5.98, premium: false },
+    { id: "lst311", label: "Shorts — Sport-Tek LST311 Womens Jersey Knit Squad Short", baseCost: 6.33, premium: false },
   ],
   hoodies: [
     { id: "g185", label: "Budget Hoodie — Gildan G185", baseCost: 17.5, premium: false },
@@ -158,6 +158,45 @@ function StageBadge({ stage }) {
   );
 }
 
+// ── Password Screen ──────────────────────────────────────────────────────────
+function PasswordScreen({ onAuth }) {
+  const [pwInput, setPwInput] = useState("");
+  const [pwError, setPwError] = useState(false);
+
+  const attempt = () => {
+    if (pwInput === "connect.Me!234") onAuth();
+    else setPwError(true);
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Inter, Arial, sans-serif" }}>
+      <div style={{ background: "white", borderRadius: 20, padding: 40, boxShadow: "0 8px 30px rgba(15,23,42,0.08)", border: "1px solid #e2e8f0", width: 340 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+          <Shirt size={28} color="#0f172a" />
+          <h2 style={{ margin: 0, fontSize: 22, color: "#0f172a" }}>TrueMark Quote Tool</h2>
+        </div>
+        <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 8 }}>Password</label>
+        <input
+          type="password"
+          style={{ width: "100%", padding: "10px 12px", borderRadius: 12, border: pwError ? "1px solid #dc2626" : "1px solid #cbd5e1", fontSize: 14, boxSizing: "border-box", marginBottom: 12 }}
+          value={pwInput}
+          onChange={(e) => { setPwInput(e.target.value); setPwError(false); }}
+          onKeyDown={(e) => { if (e.key === "Enter") attempt(); }}
+          placeholder="Enter password"
+          autoFocus
+        />
+        {pwError && <div style={{ color: "#dc2626", fontSize: 13, marginBottom: 12 }}>Incorrect password</div>}
+        <button
+          onClick={attempt}
+          style={{ width: "100%", padding: "11px", borderRadius: 12, border: "none", background: "#0f172a", color: "white", fontWeight: 700, cursor: "pointer", fontSize: 14 }}
+        >
+          Sign In
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Orders Drawer ────────────────────────────────────────────────────────────
 function OrdersDrawer({ open, onClose, onViewQuote }) {
   const [orders, setOrders] = useState([]);
@@ -168,16 +207,13 @@ function OrdersDrawer({ open, onClose, onViewQuote }) {
 
   async function fetchOrders() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("orders").select("*").order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
     if (!error) setOrders(data || []);
     setLoading(false);
   }
 
   async function updateStage(id, stage) {
-    await supabase.from("orders").update({
-      stage, stage_updated_at: new Date().toISOString(),
-    }).eq("id", id);
+    await supabase.from("orders").update({ stage, stage_updated_at: new Date().toISOString() }).eq("id", id);
     fetchOrders();
   }
 
@@ -196,11 +232,7 @@ function OrdersDrawer({ open, onClose, onViewQuote }) {
       <motion.div
         initial={{ x: "100%" }} animate={{ x: 0 }}
         transition={{ type: "spring", damping: 28, stiffness: 260 }}
-        style={{
-          position: "relative", width: 580, maxWidth: "95vw",
-          background: "white", height: "100%", overflowY: "auto",
-          padding: 28, boxShadow: "-8px 0 40px rgba(0,0,0,0.15)",
-        }}
+        style={{ position: "relative", width: 580, maxWidth: "95vw", background: "white", height: "100%", overflowY: "auto", padding: 28, boxShadow: "-8px 0 40px rgba(0,0,0,0.15)" }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <h2 style={{ margin: 0, fontSize: 22 }}>Active Orders</h2>
@@ -216,25 +248,14 @@ function OrdersDrawer({ open, onClose, onViewQuote }) {
           const isOpen = expandedId === o.id;
           const currentStageIdx = ORDER_STAGES.indexOf(o.stage);
           return (
-            <div key={o.id} style={{
-              border: "1px solid #e2e8f0", borderRadius: 16,
-              marginBottom: 12, background: "#fafafa", overflow: "hidden",
-            }}>
-              {/* Collapsed header */}
+            <div key={o.id} style={{ border: "1px solid #e2e8f0", borderRadius: 16, marginBottom: 12, background: "#fafafa", overflow: "hidden" }}>
               <div
                 onClick={() => setExpandedId(isOpen ? null : o.id)}
-                style={{
-                  padding: "14px 18px", cursor: "pointer",
-                  display: "flex", justifyContent: "space-between", alignItems: "center",
-                  background: isOpen ? "#f1f5f9" : "#fafafa",
-                  borderBottom: isOpen ? "1px solid #e2e8f0" : "none",
-                }}
+                style={{ padding: "14px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", background: isOpen ? "#f1f5f9" : "#fafafa", borderBottom: isOpen ? "1px solid #e2e8f0" : "none" }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-                    <span style={{ fontWeight: 800, fontSize: 14, color: "#0f172a", fontFamily: "monospace" }}>
-                      {o.order_number}
-                    </span>
+                    <span style={{ fontWeight: 800, fontSize: 14, color: "#0f172a", fontFamily: "monospace" }}>{o.order_number}</span>
                     <span style={{ fontWeight: 600, fontSize: 15, color: "#0f172a" }}>{o.quote_name}</span>
                   </div>
                   <div style={{ fontSize: 12, color: "#64748b" }}>
@@ -247,10 +268,8 @@ function OrdersDrawer({ open, onClose, onViewQuote }) {
                 </div>
               </div>
 
-              {/* Expanded */}
               {isOpen && (
                 <div style={{ padding: 18 }}>
-                  {/* Order summary */}
                   <div style={{ background: "#0f172a", color: "white", borderRadius: 14, padding: "12px 16px", marginBottom: 14, display: "flex", justifyContent: "space-between" }}>
                     <div>
                       <div style={{ color: "#94a3b8", fontSize: 11 }}>ORDER</div>
@@ -266,7 +285,6 @@ function OrdersDrawer({ open, onClose, onViewQuote }) {
                     </div>
                   </div>
 
-                  {/* Order details */}
                   <div style={{ background: "white", borderRadius: 12, padding: "8px 12px", border: "1px solid #e2e8f0", marginBottom: 14, fontSize: 13 }}>
                     {[
                       ["Customer", o.customer_name || "—"],
@@ -283,17 +301,12 @@ function OrdersDrawer({ open, onClose, onViewQuote }) {
                     ))}
                   </div>
 
-                  {/* Stage progress */}
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Production Stage</div>
                       <button
                         onClick={() => updateStage(o.id, "Cancelled")}
-                        style={{
-                          ...buttonStyle, padding: "4px 12px", fontSize: 12,
-                          color: "#dc2626", borderColor: "#fca5a5",
-                          background: o.stage === "Cancelled" ? "#fee2e2" : "white",
-                        }}
+                        style={{ ...buttonStyle, padding: "4px 12px", fontSize: 12, color: "#dc2626", borderColor: "#fca5a5", background: o.stage === "Cancelled" ? "#fee2e2" : "white" }}
                       >
                         Cancel Order
                       </button>
@@ -304,8 +317,7 @@ function OrdersDrawer({ open, onClose, onViewQuote }) {
                           key={stage}
                           onClick={() => updateStage(o.id, stage)}
                           style={{
-                            ...buttonStyle,
-                            padding: "8px 14px", fontSize: 13, textAlign: "left",
+                            ...buttonStyle, padding: "8px 14px", fontSize: 13, textAlign: "left",
                             background: o.stage === stage ? "#0f172a" : idx < currentStageIdx ? "#f8fafc" : "white",
                             color: o.stage === stage ? "white" : idx < currentStageIdx ? "#94a3b8" : "#0f172a",
                             borderColor: o.stage === stage ? "#0f172a" : "#e2e8f0",
@@ -316,8 +328,7 @@ function OrdersDrawer({ open, onClose, onViewQuote }) {
                             width: 20, height: 20, borderRadius: "50%", fontSize: 11, fontWeight: 700,
                             display: "flex", alignItems: "center", justifyContent: "center",
                             background: o.stage === stage ? "white" : idx < currentStageIdx ? "#cbd5e1" : "#e2e8f0",
-                            color: o.stage === stage ? "#0f172a" : "#64748b",
-                            flexShrink: 0,
+                            color: o.stage === stage ? "#0f172a" : "#64748b", flexShrink: 0,
                           }}>
                             {idx < currentStageIdx ? "✓" : idx + 1}
                           </span>
@@ -327,19 +338,10 @@ function OrdersDrawer({ open, onClose, onViewQuote }) {
                     </div>
                   </div>
 
-                  {/* Link back to quote */}
-                  <button
-                    onClick={() => { onViewQuote(o.quote_id); onClose(); }}
-                    style={{ ...buttonStyle, width: "100%", marginBottom: 10, fontSize: 13, textAlign: "center" }}
-                  >
+                  <button onClick={() => { onViewQuote(o.quote_id); onClose(); }} style={{ ...buttonStyle, width: "100%", marginBottom: 10, fontSize: 13, textAlign: "center" }}>
                     View Original Quote
                   </button>
-
-                  {/* Delete */}
-                  <button
-                    onClick={() => deleteOrder(o.id)}
-                    style={{ ...buttonStyle, width: "100%", fontSize: 13, color: "#dc2626", borderColor: "#fca5a5" }}
-                  >
+                  <button onClick={() => deleteOrder(o.id)} style={{ ...buttonStyle, width: "100%", fontSize: 13, color: "#dc2626", borderColor: "#fca5a5" }}>
                     Delete Order
                   </button>
                 </div>
@@ -377,7 +379,7 @@ function SavedQuotesDrawer({ open, onClose, highlightId }) {
     fetchQuotes();
   }
 
- async function createOrder(quote) {
+  async function createOrder(quote) {
     const { data: seqData } = await supabase.rpc("next_order_number");
     const orderNumber = seqData || "TM-000";
     await supabase.from("orders").insert([{
@@ -410,11 +412,7 @@ function SavedQuotesDrawer({ open, onClose, highlightId }) {
       <motion.div
         initial={{ x: "100%" }} animate={{ x: 0 }}
         transition={{ type: "spring", damping: 28, stiffness: 260 }}
-        style={{
-          position: "relative", width: 560, maxWidth: "95vw",
-          background: "white", height: "100%", overflowY: "auto",
-          padding: 28, boxShadow: "-8px 0 40px rgba(0,0,0,0.15)",
-        }}
+        style={{ position: "relative", width: 560, maxWidth: "95vw", background: "white", height: "100%", overflowY: "auto", padding: 28, boxShadow: "-8px 0 40px rgba(0,0,0,0.15)" }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <h2 style={{ margin: 0, fontSize: 22 }}>Saved Quotes</h2>
@@ -429,18 +427,10 @@ function SavedQuotesDrawer({ open, onClose, highlightId }) {
         {quotes.map((q) => {
           const isOpen = expandedId === q.id;
           return (
-            <div key={q.id} style={{
-              border: isOpen && highlightId === q.id ? "2px solid #0f172a" : "1px solid #e2e8f0",
-              borderRadius: 16, marginBottom: 12, background: "#fafafa", overflow: "hidden",
-            }}>
+            <div key={q.id} style={{ border: isOpen && highlightId === q.id ? "2px solid #0f172a" : "1px solid #e2e8f0", borderRadius: 16, marginBottom: 12, background: "#fafafa", overflow: "hidden" }}>
               <div
                 onClick={() => setExpandedId(isOpen ? null : q.id)}
-                style={{
-                  padding: "14px 18px", cursor: "pointer",
-                  display: "flex", justifyContent: "space-between", alignItems: "center",
-                  background: isOpen ? "#f1f5f9" : "#fafafa",
-                  borderBottom: isOpen ? "1px solid #e2e8f0" : "none",
-                }}
+                style={{ padding: "14px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", background: isOpen ? "#f1f5f9" : "#fafafa", borderBottom: isOpen ? "1px solid #e2e8f0" : "none" }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>{q.quote_name}</div>
@@ -458,11 +448,8 @@ function SavedQuotesDrawer({ open, onClose, highlightId }) {
                 <div style={{ padding: 18 }}>
                   <div style={{ background: "#f8fafc", borderRadius: 10, padding: "8px 12px", marginBottom: 12, fontSize: 12, color: "#475569" }}>
                     <span style={{ fontWeight: 600, color: "#0f172a", marginRight: 8 }}>Sizes:</span>
-                    {[
-                      ["XS", q.qty_xs], ["S", q.qty_s], ["M", q.qty_m],
-                      ["L", q.qty_l], ["XL", q.qty_xl], ["2XL", q.qty_2xl],
-                      ["3XL", q.qty_3xl], ["4XL", q.qty_4xl],
-                    ].filter(([, v]) => safeNum(v) > 0).map(([l, v]) => `${l}: ${v}`).join(" · ")}
+                    {[["XS", q.qty_xs], ["S", q.qty_s], ["M", q.qty_m], ["L", q.qty_l], ["XL", q.qty_xl], ["2XL", q.qty_2xl], ["3XL", q.qty_3xl], ["4XL", q.qty_4xl]]
+                      .filter(([, v]) => safeNum(v) > 0).map(([l, v]) => `${l}: ${v}`).join(" · ")}
                     <span style={{ marginLeft: 8, fontWeight: 600, color: "#0f172a" }}>(Total: {q.total_qty})</span>
                   </div>
 
@@ -509,24 +496,12 @@ function SavedQuotesDrawer({ open, onClose, highlightId }) {
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {["draft", "sent", "approved", "declined"].map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => updateStatus(q.id, s)}
-                          style={{
-                            ...buttonStyle, padding: "5px 12px", fontSize: 12,
-                            background: q.status === s ? "#0f172a" : "white",
-                            color: q.status === s ? "white" : "#0f172a",
-                            borderColor: q.status === s ? "#0f172a" : "#cbd5e1",
-                          }}
-                        >
+                        <button key={s} onClick={() => updateStatus(q.id, s)} style={{ ...buttonStyle, padding: "5px 12px", fontSize: 12, background: q.status === s ? "#0f172a" : "white", color: q.status === s ? "white" : "#0f172a", borderColor: q.status === s ? "#0f172a" : "#cbd5e1" }}>
                           {s.charAt(0).toUpperCase() + s.slice(1)}
                         </button>
                       ))}
                     </div>
-                    <button
-                      onClick={() => deleteQuote(q.id)}
-                      style={{ ...buttonStyle, padding: "5px 12px", fontSize: 12, color: "#dc2626", borderColor: "#fca5a5" }}
-                    >
+                    <button onClick={() => deleteQuote(q.id)} style={{ ...buttonStyle, padding: "5px 12px", fontSize: 12, color: "#dc2626", borderColor: "#fca5a5" }}>
                       Delete
                     </button>
                   </div>
@@ -548,62 +523,18 @@ function SavedQuotesDrawer({ open, onClose, highlightId }) {
 // ── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [authed, setAuthed] = useState(false);
-  const [pwInput, setPwInput] = useState("");
-  const [pwError, setPwError] = useState(false);
-
-  if (!authed) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Inter, Arial, sans-serif" }}>
-        <div style={{ background: "white", borderRadius: 20, padding: 40, boxShadow: "0 8px 30px rgba(15,23,42,0.08)", border: "1px solid #e2e8f0", width: 340 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-            <Shirt size={28} color="#0f172a" />
-            <h2 style={{ margin: 0, fontSize: 22, color: "#0f172a" }}>TrueMark Quote Tool</h2>
-          </div>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 8 }}>Password</label>
-          <input
-            type="password"
-            style={{ width: "100%", padding: "10px 12px", borderRadius: 12, border: pwError ? "1px solid #dc2626" : "1px solid #cbd5e1", fontSize: 14, boxSizing: "border-box", marginBottom: 12 }}
-            value={pwInput}
-            onChange={(e) => { setPwInput(e.target.value); setPwError(false); }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                if (pwInput === "connect.Me!234") setAuthed(true);
-                else setPwError(true);
-              }
-            }}
-            placeholder="Enter password"
-            autoFocus
-          />
-          {pwError && <div style={{ color: "#dc2626", fontSize: 13, marginBottom: 12 }}>Incorrect password</div>}
-          <button
-            onClick={() => {
-              if (pwInput === "connect.Me!234") setAuthed(true);
-              else setPwError(true);
-            }}
-            style={{ width: "100%", padding: "11px", borderRadius: 12, border: "none", background: "#0f172a", color: "white", fontWeight: 700, cursor: "pointer", fontSize: 14 }}
-          >
-            Sign In
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const [quoteName, setQuoteName] = useState("Spring Promo DTF Quote");
   const [customerName, setCustomerName] = useState("");
   const [salesRep, setSalesRep] = useState("EJ");
   const [garmentType, setGarmentType] = useState("tees");
   const [selectedGarmentId, setSelectedGarmentId] = useState("3001");
-
   const [frontPrint, setFrontPrint] = useState("1");
   const [backPrint, setBackPrint] = useState("none");
   const [hasSleevePrint, setHasSleevePrint] = useState(false);
-
   const [frontPrintCost, setFrontPrintCost] = useState(2);
   const [backPrintCost, setBackPrintCost] = useState(4);
   const [frontBackComboCost, setFrontBackComboCost] = useState(6);
   const [sleevePrintCost, setSleevePrintCost] = useState(1.4);
-
   const [qtyXS, setQtyXS] = useState(0);
   const [qtyS, setQtyS] = useState(0);
   const [qtyM, setQtyM] = useState(0);
@@ -612,17 +543,14 @@ export default function App() {
   const [qty2xl, setQty2xl] = useState(0);
   const [qty3xl, setQty3xl] = useState(0);
   const [qty4xl, setQty4xl] = useState(0);
-
   const [upcharge2xl, setUpcharge2xl] = useState(2.5);
   const [upcharge3xl, setUpcharge3xl] = useState(3.5);
   const [upcharge4xl, setUpcharge4xl] = useState(4.5);
-
   const [setupFee, setSetupFee] = useState(35);
   const [artFee, setArtFee] = useState(25);
   const [shippingFee, setShippingFee] = useState(18);
   const [rushFee, setRushFee] = useState(0);
   const [packagingFeePerUnit, setPackagingFeePerUnit] = useState(0);
-
   const [overheadPct, setOverheadPct] = useState(10);
   const [profitMarginPct, setProfitMarginPct] = useState(38);
   const [salesTaxPct, setSalesTaxPct] = useState(7);
@@ -630,34 +558,27 @@ export default function App() {
   const [ccFeePct, setCcFeePct] = useState(3);
   const [includeCcFee, setIncludeCcFee] = useState(false);
   const [manualPriceEach, setManualPriceEach] = useState("");
-
   const [tiers] = useState(defaultTiers);
-  const [notes, setNotes] = useState(
-    "Quote includes standard DTF production. Freight beyond local delivery not included unless listed above. Final invoice may adjust for exact garment availability and size breakdown."
-  );
-
+  const [notes, setNotes] = useState("Quote includes standard DTF production. Freight beyond local delivery not included unless listed above. Final invoice may adjust for exact garment availability and size breakdown.");
   const [saveStatus, setSaveStatus] = useState(null);
   const [quotesOpen, setQuotesOpen] = useState(false);
   const [ordersOpen, setOrdersOpen] = useState(false);
   const [highlightQuoteId, setHighlightQuoteId] = useState(null);
 
+  // All hooks above — conditional render below
+  if (!authed) return <PasswordScreen onAuth={() => setAuthed(true)} />;
+
   const garmentOptions = garmentCatalog[garmentType] || [];
   const selectedGarment = garmentOptions.find((g) => g.id === selectedGarmentId) || garmentOptions[0];
 
-  const totalSizeQty = useMemo(() =>
-    safeNum(qtyXS) + safeNum(qtyS) + safeNum(qtyM) + safeNum(qtyL) +
-    safeNum(qtyXL) + safeNum(qty2xl) + safeNum(qty3xl) + safeNum(qty4xl),
-    [qtyXS, qtyS, qtyM, qtyL, qtyXL, qty2xl, qty3xl, qty4xl]
-  );
+  const totalSizeQty = safeNum(qtyXS) + safeNum(qtyS) + safeNum(qtyM) + safeNum(qtyL) +
+    safeNum(qtyXL) + safeNum(qty2xl) + safeNum(qty3xl) + safeNum(qty4xl);
 
   const effectiveQuantity = totalSizeQty;
-  const selectedTier = useMemo(() => getTierForQty(effectiveQuantity, tiers), [effectiveQuantity, tiers]);
+  const selectedTier = getTierForQty(effectiveQuantity, tiers);
+  const garmentCostEach = Math.max(0, round2(safeNum(selectedGarment?.baseCost)));
 
-  const garmentCostEach = useMemo(() =>
-    Math.max(0, round2(safeNum(selectedGarment?.baseCost))), [selectedGarment]
-  );
-
-  const decorationCostEach = useMemo(() => {
+  const decorationCostEach = (() => {
     const hasFront = frontPrint !== "none";
     const hasBack = backPrint !== "none";
     let dtfCost = 0;
@@ -666,48 +587,40 @@ export default function App() {
     else if (hasBack) dtfCost = safeNum(backPrintCost);
     if (hasSleevePrint) dtfCost += safeNum(sleevePrintCost);
     return round2(dtfCost);
-  }, [frontPrint, backPrint, hasSleevePrint, frontPrintCost, backPrintCost, frontBackComboCost, sleevePrintCost]);
+  })();
 
-  const sizeUpchargeTotal = useMemo(() => round2(
+  const sizeUpchargeTotal = round2(
     safeNum(qty2xl) * safeNum(upcharge2xl) +
     safeNum(qty3xl) * safeNum(upcharge3xl) +
     safeNum(qty4xl) * safeNum(upcharge4xl)
-  ), [qty2xl, qty3xl, qty4xl, upcharge2xl, upcharge3xl, upcharge4xl]);
+  );
 
-  const calculations = useMemo(() => {
-    const qty = effectiveQuantity;
-    const garmentSubtotal = garmentCostEach * qty;
-    const decorationSubtotal = decorationCostEach * qty;
-    const packagingSubtotal = safeNum(packagingFeePerUnit) * qty;
-    const fixedFees = safeNum(setupFee) + safeNum(artFee) + safeNum(shippingFee) + safeNum(rushFee);
-    const hardCost = garmentSubtotal + decorationSubtotal + packagingSubtotal + fixedFees + sizeUpchargeTotal;
-    const overhead = hardCost * (safeNum(overheadPct) / 100);
-    const preProfit = hardCost + overhead;
-    const profit = preProfit * (safeNum(profitMarginPct) / 100);
-    const subtotal = preProfit + profit;
-    const ccFee = includeCcFee ? subtotal * (safeNum(ccFeePct) / 100) : 0;
-    const taxableSubtotal = subtotal + ccFee;
-    const tax = includeTax ? taxableSubtotal * (safeNum(salesTaxPct) / 100) : 0;
-    const finalTotal = taxableSubtotal + tax;
-    const rawPrice = qty > 0 ? finalTotal / qty : 0;
-    const calculatedPricePerPiece = Math.round(rawPrice * 4) / 4;
-    const isManual = manualPriceEach !== "";
-    const pricePerPiece = isManual ? safeNum(manualPriceEach) : calculatedPricePerPiece;
-    const displaySubtotal = isManual ? pricePerPiece * qty : subtotal;
-    const displayTotal = isManual
-      ? includeTax ? displaySubtotal * (1 + safeNum(salesTaxPct) / 100) : displaySubtotal
-      : finalTotal;
-    return {
-      garmentSubtotal, decorationSubtotal, packagingSubtotal,
-      fixedFees, hardCost, overhead, profit, subtotal,
-      ccFee, taxableSubtotal, tax, finalTotal,
-      displaySubtotal, calculatedPricePerPiece, pricePerPiece, displayTotal,
-    };
-  }, [
-    effectiveQuantity, garmentCostEach, decorationCostEach, packagingFeePerUnit,
-    setupFee, artFee, shippingFee, rushFee, sizeUpchargeTotal,
-    overheadPct, profitMarginPct, includeTax, salesTaxPct, manualPriceEach, includeCcFee, ccFeePct,
-  ]);
+  const qty = effectiveQuantity;
+  const garmentSubtotal = garmentCostEach * qty;
+  const decorationSubtotal = decorationCostEach * qty;
+  const packagingSubtotal = safeNum(packagingFeePerUnit) * qty;
+  const fixedFees = safeNum(setupFee) + safeNum(artFee) + safeNum(shippingFee) + safeNum(rushFee);
+  const hardCost = garmentSubtotal + decorationSubtotal + packagingSubtotal + fixedFees + sizeUpchargeTotal;
+  const overhead = hardCost * (safeNum(overheadPct) / 100);
+  const preProfit = hardCost + overhead;
+  const profit = preProfit * (safeNum(profitMarginPct) / 100);
+  const subtotal = preProfit + profit;
+  const ccFee = includeCcFee ? subtotal * (safeNum(ccFeePct) / 100) : 0;
+  const taxableSubtotal = subtotal + ccFee;
+  const tax = includeTax ? taxableSubtotal * (safeNum(salesTaxPct) / 100) : 0;
+  const finalTotal = taxableSubtotal + tax;
+  const rawPrice = qty > 0 ? finalTotal / qty : 0;
+  const calculatedPricePerPiece = Math.round(rawPrice * 4) / 4;
+  const isManual = manualPriceEach !== "";
+  const pricePerPiece = isManual ? safeNum(manualPriceEach) : calculatedPricePerPiece;
+  const displaySubtotal = isManual ? pricePerPiece * qty : subtotal;
+  const displayTotal = isManual ? (includeTax ? displaySubtotal * (1 + safeNum(salesTaxPct) / 100) : displaySubtotal) : finalTotal;
+
+  const calculations = {
+    garmentSubtotal, decorationSubtotal, packagingSubtotal, fixedFees, hardCost,
+    overhead, profit, subtotal, ccFee, taxableSubtotal, tax, finalTotal,
+    displaySubtotal, calculatedPricePerPiece, pricePerPiece, displayTotal,
+  };
 
   const garmentTypeLabel = { tees: "Tee", hoodies: "Hoodie", polos: "Polo", bottoms: "Bottom", hats: "Hat" }[garmentType];
 
@@ -739,17 +652,17 @@ export default function App() {
       overhead_pct: safeNum(overheadPct), profit_margin_pct: safeNum(profitMarginPct),
       sales_tax_pct: safeNum(salesTaxPct), include_tax: includeTax,
       cc_fee_pct: safeNum(ccFeePct), include_cc_fee: includeCcFee,
-      hard_cost: round2(calculations.hardCost),
-      garment_subtotal: round2(calculations.garmentSubtotal),
-      decoration_subtotal: round2(calculations.decorationSubtotal),
+      hard_cost: round2(hardCost),
+      garment_subtotal: round2(garmentSubtotal),
+      decoration_subtotal: round2(decorationSubtotal),
       size_upcharge_total: round2(sizeUpchargeTotal),
-      packaging_subtotal: round2(calculations.packagingSubtotal),
-      fixed_fees: round2(calculations.fixedFees),
-      overhead: round2(calculations.overhead),
-      profit: round2(calculations.profit),
-      subtotal: round2(calculations.subtotal),
-      final_total: round2(calculations.finalTotal),
-      price_per_piece: round2(calculations.pricePerPiece),
+      packaging_subtotal: round2(packagingSubtotal),
+      fixed_fees: round2(fixedFees),
+      overhead: round2(overhead),
+      profit: round2(profit),
+      subtotal: round2(subtotal),
+      final_total: round2(finalTotal),
+      price_per_piece: round2(pricePerPiece),
       manual_price_each: manualPriceEach !== "" ? safeNum(manualPriceEach) : null,
       notes,
     }]);
@@ -776,8 +689,7 @@ export default function App() {
   const generateQuotePdf = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const isManual = manualPriceEach !== "";
-    const pdfSubtotal = isManual ? calculations.displaySubtotal : calculations.subtotal;
+    const pdfSubtotal = isManual ? displaySubtotal : subtotal;
     const pdfCcFee = includeCcFee ? pdfSubtotal * (safeNum(ccFeePct) / 100) : 0;
     const pdfTax = includeTax ? (pdfSubtotal + pdfCcFee) * (safeNum(salesTaxPct) / 100) : 0;
     const pdfTotal = pdfSubtotal + pdfCcFee + pdfTax;
@@ -812,15 +724,9 @@ export default function App() {
     autoTable(doc, {
       startY: doc.lastAutoTable.finalY + 6, theme: "grid",
       head: [["Item", "Qty", "Unit Price", "Total"]],
-      body: [[
-        `${selectedGarment?.label || "Custom Apparel"} - DTF Decoration`,
-        effectiveQuantity, currency(pdfSubtotal / effectiveQuantity), currency(pdfSubtotal),
-      ]],
+      body: [[`${selectedGarment?.label || "Custom Apparel"} - DTF Decoration`, effectiveQuantity, currency(pdfSubtotal / effectiveQuantity), currency(pdfSubtotal)]],
       styles: { fontSize: 10, cellPadding: 3 },
-      columnStyles: {
-        0: { cellWidth: 82 }, 1: { halign: "center", cellWidth: 20 },
-        2: { halign: "right", cellWidth: 35 }, 3: { halign: "right", cellWidth: 35 },
-      },
+      columnStyles: { 0: { cellWidth: 82 }, 1: { halign: "center", cellWidth: 20 }, 2: { halign: "right", cellWidth: 35 }, 3: { halign: "right", cellWidth: 35 } },
     });
 
     autoTable(doc, {
@@ -832,10 +738,7 @@ export default function App() {
         ["Final Total", "", currency(pdfTotal)],
       ],
       styles: { fontSize: 10, cellPadding: 2 },
-      columnStyles: {
-        0: { cellWidth: 45, fontStyle: "bold" }, 1: { cellWidth: 85 },
-        2: { halign: "right", cellWidth: 35 },
-      },
+      columnStyles: { 0: { cellWidth: 45, fontStyle: "bold" }, 1: { cellWidth: 85 }, 2: { halign: "right", cellWidth: 35 } },
     });
 
     const tableEndY = doc.lastAutoTable?.finalY || 160;
@@ -861,20 +764,12 @@ export default function App() {
               <h1 style={{ display: "flex", alignItems: "center", gap: 12, margin: 0, fontSize: 34, color: "#0f172a" }}>
                 <Shirt size={32} color="#0f172a" /> TrueMark Quote Tool
               </h1>
-              <p style={{ color: "#475569", marginTop: 8 }}>
-                Fast DTF apparel pricing with branded garment presets, size-specific upcharges, and customer-facing quote output.
-              </p>
+              <p style={{ color: "#475569", marginTop: 8 }}>Fast DTF apparel pricing with branded garment presets, size-specific upcharges, and customer-facing quote output.</p>
             </div>
             <div style={{ display: "flex", gap: 12 }}>
-              <button style={buttonStyle} onClick={resetDefaults}>
-                <RefreshCcw size={16} style={{ marginRight: 8, verticalAlign: "middle" }} /> Reset
-              </button>
-              <button style={buttonStyle} onClick={() => setQuotesOpen(true)}>
-                <List size={16} style={{ marginRight: 8, verticalAlign: "middle" }} /> View Quotes
-              </button>
-              <button style={buttonStyle} onClick={() => setOrdersOpen(true)}>
-                <ClipboardList size={16} style={{ marginRight: 8, verticalAlign: "middle" }} /> View Orders
-              </button>
+              <button style={buttonStyle} onClick={resetDefaults}><RefreshCcw size={16} style={{ marginRight: 8, verticalAlign: "middle" }} /> Reset</button>
+              <button style={buttonStyle} onClick={() => setQuotesOpen(true)}><List size={16} style={{ marginRight: 8, verticalAlign: "middle" }} /> View Quotes</button>
+              <button style={buttonStyle} onClick={() => setOrdersOpen(true)}><ClipboardList size={16} style={{ marginRight: 8, verticalAlign: "middle" }} /> View Orders</button>
             </div>
           </div>
         </motion.div>
@@ -883,21 +778,16 @@ export default function App() {
           <div style={{ display: "grid", gap: 24 }}>
             <div style={cardStyle}>
               <SectionTitle icon={Calculator}>Quote Builder</SectionTitle>
-
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }}>
                 <Field label="Quote Name"><input style={inputStyle} value={quoteName} onChange={(e) => setQuoteName(e.target.value)} /></Field>
                 <Field label="Customer"><input style={inputStyle} value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Client / organization" /></Field>
                 <Field label="Sales Rep"><input style={inputStyle} value={salesRep} onChange={(e) => setSalesRep(e.target.value)} /></Field>
               </div>
-
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }}>
                 <Field label="Garment Category">
                   <select style={inputStyle} value={garmentType} onChange={(e) => { setGarmentType(e.target.value); setSelectedGarmentId(garmentCatalog[e.target.value][0].id); }}>
-                    <option value="tees">Tees/Tanks</option>
-                    <option value="hoodies">Hoodies</option>
-                    <option value="polos">Polos</option>
-                    <option value="bottoms">Bottoms</option>
-                    <option value="hats">Hats</option>
+                    <option value="tees">Tees/Tanks</option><option value="hoodies">Hoodies</option>
+                    <option value="polos">Polos</option><option value="bottoms">Bottoms</option><option value="hats">Hats</option>
                   </select>
                 </Field>
                 <Field label="Garment Style">
@@ -907,7 +797,6 @@ export default function App() {
                 </Field>
                 <Field label="Total Quantity"><div style={readOnlyStyle}>{effectiveQuantity}</div></Field>
               </div>
-
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }}>
                 <Field label="Front Print">
                   <select style={inputStyle} value={frontPrint} onChange={(e) => setFrontPrint(e.target.value)}>
@@ -926,38 +815,27 @@ export default function App() {
                   </label>
                 </div>
               </div>
-
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 16 }}>
                 <Field label="Front Print Cost"><input style={inputStyle} type="number" value={frontPrintCost} onChange={(e) => setFrontPrintCost(e.target.value)} /></Field>
                 <Field label="Back Print Cost"><input style={inputStyle} type="number" value={backPrintCost} onChange={(e) => setBackPrintCost(e.target.value)} /></Field>
                 <Field label="Front + Back Combo"><input style={inputStyle} type="number" value={frontBackComboCost} onChange={(e) => setFrontBackComboCost(e.target.value)} /></Field>
                 <Field label="Sleeve Print Cost"><input style={inputStyle} type="number" value={sleevePrintCost} onChange={(e) => setSleevePrintCost(e.target.value)} /></Field>
               </div>
-
               <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Size Breakdown</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 12, marginBottom: 16 }}>
-                {[
-                  ["XS", qtyXS, setQtyXS], ["S", qtyS, setQtyS], ["M", qtyM, setQtyM],
-                  ["L", qtyL, setQtyL], ["XL", qtyXL, setQtyXL], ["2XL", qty2xl, setQty2xl],
-                  ["3XL", qty3xl, setQty3xl], ["4XL", qty4xl, setQty4xl],
-                ].map(([label, val, setter]) => (
-                  <Field key={label} label={label}>
-                    <input style={inputStyle} type="number" min="0" value={val} onChange={(e) => setter(e.target.value)} />
-                  </Field>
+                {[["XS", qtyXS, setQtyXS], ["S", qtyS, setQtyS], ["M", qtyM, setQtyM], ["L", qtyL, setQtyL], ["XL", qtyXL, setQtyXL], ["2XL", qty2xl, setQty2xl], ["3XL", qty3xl, setQty3xl], ["4XL", qty4xl, setQty4xl]].map(([label, val, setter]) => (
+                  <Field key={label} label={label}><input style={inputStyle} type="number" min="0" value={val} onChange={(e) => setter(e.target.value)} /></Field>
                 ))}
               </div>
-
               <div style={{ marginBottom: 16, color: "#475569", fontSize: 13 }}>
                 Total qty: <strong>{totalSizeQty}</strong>
                 {sizeRunSummary && <span style={{ marginLeft: 12, color: "#94a3b8" }}>{sizeRunSummary}</span>}
               </div>
-
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }}>
                 <Field label="2XL Upcharge"><input style={inputStyle} type="number" value={upcharge2xl} onChange={(e) => setUpcharge2xl(e.target.value)} /></Field>
                 <Field label="3XL Upcharge"><input style={inputStyle} type="number" value={upcharge3xl} onChange={(e) => setUpcharge3xl(e.target.value)} /></Field>
                 <Field label="4XL Upcharge"><input style={inputStyle} type="number" value={upcharge4xl} onChange={(e) => setUpcharge4xl(e.target.value)} /></Field>
               </div>
-
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 16 }}>
                 <Field label="Setup Fee"><input style={inputStyle} type="number" value={setupFee} onChange={(e) => setSetupFee(e.target.value)} /></Field>
                 <Field label="Art Fee"><input style={inputStyle} type="number" value={artFee} onChange={(e) => setArtFee(e.target.value)} /></Field>
@@ -965,28 +843,21 @@ export default function App() {
                 <Field label="Rush Fee"><input style={inputStyle} type="number" value={rushFee} onChange={(e) => setRushFee(e.target.value)} /></Field>
                 <Field label="Packaging / Unit"><input style={inputStyle} type="number" value={packagingFeePerUnit} onChange={(e) => setPackagingFeePerUnit(e.target.value)} /></Field>
               </div>
-
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 16 }}>
                 <Field label="Overhead %"><input style={inputStyle} type="number" value={overheadPct} onChange={(e) => setOverheadPct(e.target.value)} /></Field>
                 <Field label="Profit Margin %"><input style={inputStyle} type="number" value={profitMarginPct} onChange={(e) => setProfitMarginPct(e.target.value)} /></Field>
                 <Field label="Sales Tax %"><input style={inputStyle} type="number" value={salesTaxPct} onChange={(e) => setSalesTaxPct(e.target.value)} /></Field>
                 <Field label="Credit Card Fee %"><input style={inputStyle} type="number" value={ccFeePct} onChange={(e) => setCcFeePct(e.target.value)} /></Field>
-                <Field label="Manual Price / Piece">
-                  <input style={inputStyle} type="number" step="0.01" placeholder="Optional" value={manualPriceEach} onChange={(e) => setManualPriceEach(e.target.value)} />
-                </Field>
+                <Field label="Manual Price / Piece"><input style={inputStyle} type="number" step="0.01" placeholder="Optional" value={manualPriceEach} onChange={(e) => setManualPriceEach(e.target.value)} /></Field>
               </div>
-
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14, fontWeight: 600 }}>
-                  <input type="checkbox" checked={includeTax} onChange={(e) => setIncludeTax(e.target.checked)} />
-                  Include tax in final quote
+                  <input type="checkbox" checked={includeTax} onChange={(e) => setIncludeTax(e.target.checked)} /> Include tax in final quote
                 </label>
                 <label style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14, fontWeight: 600, marginTop: 8 }}>
-                  <input type="checkbox" checked={includeCcFee} onChange={(e) => setIncludeCcFee(e.target.checked)} />
-                  Include credit card processing fee
+                  <input type="checkbox" checked={includeCcFee} onChange={(e) => setIncludeCcFee(e.target.checked)} /> Include credit card processing fee
                 </label>
               </div>
-
               <Field label="Quote Notes">
                 <textarea style={{ ...inputStyle, minHeight: 110, resize: "vertical" }} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </Field>
@@ -998,24 +869,22 @@ export default function App() {
               <SectionTitle icon={Package}>Internal Pricing Summary</SectionTitle>
               <div style={{ background: "#0f172a", color: "white", borderRadius: 20, padding: 20, marginBottom: 18 }}>
                 <div style={{ color: "#cbd5e1", fontSize: 14 }}>Sell Price / Piece</div>
-                <div style={{ fontSize: 38, fontWeight: 800, marginTop: 8 }}>{currency(calculations.pricePerPiece)}</div>
-                <div style={{ color: "#cbd5e1", fontSize: 14, marginTop: 8 }}>Total Quote: {currency(calculations.displayTotal)}</div>
+                <div style={{ fontSize: 38, fontWeight: 800, marginTop: 8 }}>{currency(pricePerPiece)}</div>
+                <div style={{ color: "#cbd5e1", fontSize: 14, marginTop: 8 }}>Total Quote: {currency(displayTotal)}</div>
               </div>
               <SummaryRow label="Quoted quantity" value={String(effectiveQuantity)} />
               <SummaryRow label="Garment / ea" value={currency(garmentCostEach)} />
               <SummaryRow label="DTF / ea" value={currency(decorationCostEach)} />
-              <SummaryRow label="Garment subtotal" value={currency(calculations.garmentSubtotal)} />
-              <SummaryRow label="DTF subtotal" value={currency(calculations.decorationSubtotal)} />
+              <SummaryRow label="Garment subtotal" value={currency(garmentSubtotal)} />
+              <SummaryRow label="DTF subtotal" value={currency(decorationSubtotal)} />
               <SummaryRow label="Size upcharges" value={currency(sizeUpchargeTotal)} />
-              <SummaryRow label="Packaging subtotal" value={currency(calculations.packagingSubtotal)} />
-              <SummaryRow label="Fixed fees" value={currency(calculations.fixedFees)} />
-              <SummaryRow label="Overhead" value={currency(calculations.overhead)} />
-              <SummaryRow label="Profit" value={currency(calculations.profit)} />
-              {manualPriceEach !== "" && (
-                <SummaryRow label="Manual pricing active" value={`${effectiveQuantity} × ${currency(manualPriceEach)}`} />
-              )}
-              <SummaryRow label={manualPriceEach !== "" ? "Manual subtotal" : "Subtotal"} value={currency(manualPriceEach !== "" ? calculations.displaySubtotal : calculations.subtotal)} bold />
-              <SummaryRow label="Tax" value={currency(manualPriceEach !== "" ? calculations.displayTotal - calculations.displaySubtotal : calculations.tax)} />
+              <SummaryRow label="Packaging subtotal" value={currency(packagingSubtotal)} />
+              <SummaryRow label="Fixed fees" value={currency(fixedFees)} />
+              <SummaryRow label="Overhead" value={currency(overhead)} />
+              <SummaryRow label="Profit" value={currency(profit)} />
+              {isManual && <SummaryRow label="Manual pricing active" value={`${effectiveQuantity} × ${currency(safeNum(manualPriceEach))}`} />}
+              <SummaryRow label={isManual ? "Manual subtotal" : "Subtotal"} value={currency(isManual ? displaySubtotal : subtotal)} bold />
+              <SummaryRow label="Tax" value={currency(isManual ? displayTotal - displaySubtotal : tax)} />
             </div>
 
             <div style={{ ...cardStyle, border: "2px solid #0f172a" }}>
@@ -1023,31 +892,19 @@ export default function App() {
               <div style={{ marginBottom: 14 }}>
                 <div style={{ textTransform: "uppercase", letterSpacing: 1, fontSize: 12, color: "#64748b" }}>Quote</div>
                 <h3 style={{ margin: "6px 0 0", fontSize: 28 }}>{quoteName}</h3>
-                <div style={{ marginTop: 6, color: "#475569", fontSize: 14 }}>
-                  Prepared for {customerName || "Client"} • Rep: {salesRep}
-                </div>
+                <div style={{ marginTop: 6, color: "#475569", fontSize: 14 }}>Prepared for {customerName || "Client"} • Rep: {salesRep}</div>
               </div>
               <div style={{ background: "#f8fafc", borderRadius: 16, padding: 16, fontSize: 14, marginBottom: 16 }}>
                 <SummaryRow label="Garment" value={selectedGarment?.label || ""} />
                 <SummaryRow label="Category" value={garmentTypeLabel} />
                 <SummaryRow label="Decoration" value="DTF" />
                 <SummaryRow label="Total Quantity" value={String(effectiveQuantity)} />
-                <SummaryRow
-                  label="Print Details"
-                  value={`Front: ${frontPrint === "full" ? "Full Color" : frontPrint === "1" ? "1 Color" : "None"} | Back: ${backPrint === "none" ? "None" : backPrint === "full" ? "Full Color" : "1 Color"}${hasSleevePrint ? " | Sleeve" : ""}`}
-                />
+                <SummaryRow label="Print Details" value={`Front: ${frontPrint === "full" ? "Full Color" : frontPrint === "1" ? "1 Color" : "None"} | Back: ${backPrint === "none" ? "None" : backPrint === "full" ? "Full Color" : "1 Color"}${hasSleevePrint ? " | Sleeve" : ""}`} />
                 <div style={{ paddingTop: 8, borderTop: "1px solid #e2e8f0", marginTop: 8 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Size Breakdown</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
-                    {[
-                      ["XS", qtyXS], ["S", qtyS], ["M", qtyM], ["L", qtyL],
-                      ["XL", qtyXL], ["2XL", qty2xl], ["3XL", qty3xl], ["4XL", qty4xl],
-                    ].map(([label, val]) => (
-                      <div key={label} style={{
-                        background: safeNum(val) > 0 ? "#0f172a" : "#f1f5f9",
-                        color: safeNum(val) > 0 ? "white" : "#94a3b8",
-                        borderRadius: 8, padding: "6px 8px", textAlign: "center", fontSize: 12,
-                      }}>
+                    {[["XS", qtyXS], ["S", qtyS], ["M", qtyM], ["L", qtyL], ["XL", qtyXL], ["2XL", qty2xl], ["3XL", qty3xl], ["4XL", qty4xl]].map(([label, val]) => (
+                      <div key={label} style={{ background: safeNum(val) > 0 ? "#0f172a" : "#f1f5f9", color: safeNum(val) > 0 ? "white" : "#94a3b8", borderRadius: 8, padding: "6px 8px", textAlign: "center", fontSize: 12 }}>
                         <div style={{ fontWeight: 700 }}>{label}</div>
                         <div>{safeNum(val) > 0 ? val : "—"}</div>
                       </div>
@@ -1057,10 +914,10 @@ export default function App() {
               </div>
               <div style={{ background: "#0f172a", color: "white", borderRadius: 20, padding: 20, marginBottom: 16 }}>
                 <div style={{ color: "#cbd5e1", fontSize: 14 }}>Quoted Price</div>
-                <div style={{ fontSize: 40, fontWeight: 800, marginTop: 8 }}>{currency(calculations.pricePerPiece)}</div>
+                <div style={{ fontSize: 40, fontWeight: 800, marginTop: 8 }}>{currency(pricePerPiece)}</div>
                 <div style={{ color: "#cbd5e1", fontSize: 14 }}>per piece</div>
                 <div style={{ borderTop: "1px solid #334155", marginTop: 16, paddingTop: 16, fontSize: 14, display: "flex", justifyContent: "space-between" }}>
-                  <span>Total Project</span><strong>{currency(calculations.displayTotal)}</strong>
+                  <span>Total Project</span><strong>{currency(displayTotal)}</strong>
                 </div>
               </div>
               <div style={{ marginBottom: 16 }}>
@@ -1070,11 +927,7 @@ export default function App() {
               <button
                 onClick={async () => { await saveQuote(); generateQuotePdf(); }}
                 disabled={saveStatus === "saving"}
-                style={{
-                  width: "100%", padding: "12px 14px", borderRadius: 14, border: "none",
-                  background: saveStatus === "saved" ? "#16a34a" : saveStatus === "error" ? "#dc2626" : "#0f172a",
-                  color: "white", fontWeight: 700, cursor: "pointer", transition: "background 0.2s",
-                }}
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 14, border: "none", background: saveStatus === "saved" ? "#16a34a" : saveStatus === "error" ? "#dc2626" : "#0f172a", color: "white", fontWeight: 700, cursor: "pointer", transition: "background 0.2s" }}
               >
                 {pdfButtonLabel}
               </button>
@@ -1083,20 +936,8 @@ export default function App() {
         </div>
       </div>
 
-      <SavedQuotesDrawer
-        open={quotesOpen}
-        onClose={() => { setQuotesOpen(false); setHighlightQuoteId(null); }}
-        highlightId={highlightQuoteId}
-      />
-      <OrdersDrawer
-        open={ordersOpen}
-        onClose={() => setOrdersOpen(false)}
-        onViewQuote={(quoteId) => {
-          setHighlightQuoteId(quoteId);
-          setOrdersOpen(false);
-          setQuotesOpen(true);
-        }}
-      />
+      <SavedQuotesDrawer open={quotesOpen} onClose={() => { setQuotesOpen(false); setHighlightQuoteId(null); }} highlightId={highlightQuoteId} />
+      <OrdersDrawer open={ordersOpen} onClose={() => setOrdersOpen(false)} onViewQuote={(quoteId) => { setHighlightQuoteId(quoteId); setOrdersOpen(false); setQuotesOpen(true); }} />
     </div>
   );
 }
