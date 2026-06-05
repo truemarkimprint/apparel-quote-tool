@@ -129,23 +129,13 @@ function SanMarSearch({ onSelect }) {
     if (!q || q.trim().length < 2) { setResults([]); setShowResults(false); return; }
     setLoading(true);
     const { data, error } = await supabase
-      .from("sanmar_products")
-      .select("style, product_title, brand, category, piece_price, color_name")
+      .from("sanmar_styles")
+      .select("style, product_title, brand, category, base_price")
       .or(`style.ilike.%${q}%,product_title.ilike.%${q}%,brand.ilike.%${q}%`)
-      .in("product_status", ["Regular","Active","New"])
       .order("style")
       .limit(100);
     if (!error && data) {
-      const styleMap = {};
-      data.forEach(row => {
-        if (!styleMap[row.style]) {
-          styleMap[row.style] = { style: row.style, product_title: row.product_title, brand: row.brand, category: row.category, base_price: parseFloat(row.piece_price) };
-        } else {
-          const p = parseFloat(row.piece_price);
-          if (p < styleMap[row.style].base_price) styleMap[row.style].base_price = p;
-        }
-      });
-      setResults(Object.values(styleMap).slice(0, 20));
+      setResults(data);
       setShowResults(true);
     }
     setLoading(false);
