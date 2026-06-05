@@ -723,7 +723,7 @@ export default function App() {
                 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:20}}>
                   <Field label="Front Print Cost"><input style={inputStyle} type="number" value={frontPrintCost} onChange={e=>setFrontPrintCost(e.target.value)}/></Field>
                   <Field label="Back Print Cost"><input style={inputStyle} type="number" value={backPrintCost} onChange={e=>setBackPrintCost(e.target.value)}/></Field>
-                  <Field label="Front + Back Combo"><input style={inputStyle} type="number" value={frontBackComboCost} onChange={e=>setFrontBackComboCost(e.target.value)}/></Field>
+                  <Field label="F+B Combo"><input style={inputStyle} type="number" value={frontBackComboCost} onChange={e=>setFrontBackComboCost(e.target.value)}/></Field>
                   <Field label="Sleeve Print Cost"><input style={inputStyle} type="number" value={sleevePrintCost} onChange={e=>setSleevePrintCost(e.target.value)}/></Field>
                 </div>
 
@@ -733,7 +733,7 @@ export default function App() {
                   <Field label="Art Fee"><input style={inputStyle} type="number" value={artFee} onChange={e=>setArtFee(e.target.value)}/></Field>
                   <Field label="Shipping Fee"><input style={inputStyle} type="number" value={shippingFee} onChange={e=>setShippingFee(e.target.value)}/></Field>
                   <Field label="Rush Fee"><input style={inputStyle} type="number" value={rushFee} onChange={e=>setRushFee(e.target.value)}/></Field>
-                  <Field label="Packaging / Unit"><input style={inputStyle} type="number" value={packagingFeePerUnit} onChange={e=>setPackagingFeePerUnit(e.target.value)}/></Field>
+                  <Field label="Pkg / Unit"><input style={inputStyle} type="number" value={packagingFeePerUnit} onChange={e=>setPackagingFeePerUnit(e.target.value)}/></Field>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:14}}>
                   <Field label="Overhead %"><input style={inputStyle} type="number" value={overheadPct} onChange={e=>setOverheadPct(e.target.value)}/></Field>
@@ -742,7 +742,7 @@ export default function App() {
                   <Field label="CC Fee %"><input style={inputStyle} type="number" value={ccFeePct} onChange={e=>setCcFeePct(e.target.value)}/></Field>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:16}}>
-                  <Field label="Manual Price Override"><input style={inputStyle} type="number" step="0.01" placeholder="Optional" value={manualPriceEach} onChange={e=>setManualPriceEach(e.target.value)}/></Field>
+                  <Field label="Manual Price / pc"><input style={inputStyle} type="number" step="0.01" placeholder="Optional" value={manualPriceEach} onChange={e=>setManualPriceEach(e.target.value)}/></Field>
                 </div>
                 <div style={{display:"flex",gap:24,marginBottom:16,fontFamily:"Arial, sans-serif"}}>
                   <label style={{display:"flex",gap:8,alignItems:"center",fontSize:13,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={includeTax} onChange={e=>setIncludeTax(e.target.checked)} style={{accentColor:TM.dark}}/>Include tax</label>
