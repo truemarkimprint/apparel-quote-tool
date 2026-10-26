@@ -1157,6 +1157,41 @@ if (!authed) {
 
       <SavedQuotesDrawer open={quotesOpen} onClose={()=>{setQuotesOpen(false);setHighlightQuoteId(null);}} highlightId={highlightQuoteId}/>
       <OrdersDrawer open={ordersOpen} onClose={()=>setOrdersOpen(false)} onViewQuote={quoteId=>{setHighlightQuoteId(quoteId);setOrdersOpen(false);setQuotesOpen(true);}}/>
+      
+<button
+  type="button"
+  onClick={async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      alert("Unable to sign out: " + error.message);
+      return;
+    }
+
+    setAuthed(false);
+    setAuthError("");
+    setQuotesOpen(false);
+    setOrdersOpen(false);
+  }}
+  style={{
+    position: "fixed",
+    bottom: 20,
+    right: 20,
+    zIndex: 900,
+    background: TM.dark,
+    color: TM.tan,
+    border: `1px solid ${TM.tan}`,
+    borderRadius: 8,
+    padding: "12px 18px",
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer",
+    boxShadow: "0 4px 16px rgba(0,0,0,0.2)"
+  }}
+>
+  Sign Out
+</button>
+
     </div>
   );
 }
