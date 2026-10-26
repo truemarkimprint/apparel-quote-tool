@@ -416,7 +416,7 @@ function LineItemCard({ item, index, total, onChange, onRemove }) {
 
 // ── Password Screen ───────────────────────────────────────────────────────────
 
-function PasswordScreen({ onAuth }) {
+function PasswordScreen({ onAuth, authError }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -526,14 +526,14 @@ function PasswordScreen({ onAuth }) {
           style={{ ...inputStyle, marginBottom: 12 }}
         />
 
-        {error && (
+        {(error || authError) && (
           <div style={{
             color: TM.danger,
             fontSize: 13,
             marginBottom: 12,
             fontWeight: 600
           }}>
-            {error}
+            {error || authError}
           </div>
         )}
 
@@ -852,13 +852,11 @@ if (authLoading) {
 if (!authed) {
   return (
     <div>
-      <PasswordScreen onAuth={() => setAuthLoading(true)} />
-      {authError && (
-        <p style={{ color: TM.danger, textAlign: "center" }}>
-          {authError}
-        </p>
-      )}
-    </div>
+      <PasswordScreen
+  onAuth={() => setAuthLoading(true)}
+  authError={authError}
+/>
+  </div>
   );
 }
 
