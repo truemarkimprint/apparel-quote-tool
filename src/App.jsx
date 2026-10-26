@@ -696,7 +696,63 @@ function SavedQuotesDrawer({open,onClose,highlightId}) {
 
 // ── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const [authed,setAuthed]=useState(false);
+  
+const [authed, setAuthed] = useState(false);
+const [authLoading, setAuthLoading] = useState(true);
+const [authError, setAuthError] = useState("");
+
+useEffect(() => {
+  let active = true;
+
+  const checkAdmin = async (session) => {
+    if (!session) {
+      if (active) {
+        setAuthed(false);
+        setAuthLoading(false);
+      }
+      return;
+    }
+
+    const { data, error } = await supabase.rpc("is_truemark_admin");
+
+    if (!active) return;
+
+    if (error || data !== true) {
+      setAuthed(false);
+      setAuthError("This account is not authorized to access TrueMark.");
+    } else {
+      setAuthed(true);
+      setAuthError("");
+    }
+
+    setAuthLoading(false);
+  };
+
+  supabase.auth.getSession().then(({ data, error }) => {
+    if (!active) return;
+    if (error) {
+      setAuthed(false);
+      setAuthLoading(false);
+      return;
+    }
+    checkAdmin(data.session);
+  });
+
+  const { data: listener } = supabase.auth.onAuthStateChange(
+    (_event, session) => {
+      // Defer the database check outside the auth callback.
+      setTimeout(() => {
+        if (active) checkAdmin(session);
+      }, 0);
+    }
+  );
+
+  return () => {
+    active = false;
+    listener.subscription.unsubscribe();
+  };
+}, []);
+
   const [quoteName,setQuoteName]=useState("Spring Promo DTF Quote");
   const [customerName,setCustomerName]=useState("");
   const [salesRep,setSalesRep]=useState("EJ");
@@ -776,7 +832,36 @@ export default function App() {
   const avgGarmentCost = totalQty>0?round2(totalGarmentSubtotal/totalQty):0;
   const avgDecorationCost = totalQty>0?round2(totalDecorationSubtotal/totalQty):0;
 
-  if(!authed) return <PasswordScreen onAuth={()=>setAuthed(true)}/>;
+  
+if (authLoading) {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: TM.dark,
+      color: TM.tan,
+      fontFamily: "Georgia, serif"
+    }}>
+      Verifying TrueMark access...
+    </div>
+  );
+}
+
+if (!authed) {
+  return (
+    <div>
+      <PasswordScreen onAuth={() => setAuthLoading(true)} />
+      {authError && (
+        <p style={{ color: TM.danger, textAlign: "center" }}>
+          {authError}
+        </p>
+      )}
+    </div>
+  );
+}
+
 
   const updateLineItem = (id, updated) => setLineItems(prev=>prev.map(i=>i.id===id?updated:i));
   const removeLineItem = (id) => setLineItems(prev=>prev.filter(i=>i.id!==id));
