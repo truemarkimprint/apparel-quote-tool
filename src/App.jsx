@@ -701,10 +701,14 @@ const [authed, setAuthed] = useState(false);
 const [authLoading, setAuthLoading] = useState(true);
 const [authError, setAuthError] = useState("");
 
+
 useEffect(() => {
   let active = true;
+  let checkVersion = 0;
 
   const checkAdmin = async (session) => {
+    const version = ++checkVersion;
+
     if (!session) {
       if (active) {
         setAuthed(false);
@@ -713,34 +717,60 @@ useEffect(() => {
       return;
     }
 
-    const { data, error } = await supabase.rpc("is_truemark_admin");
+    setAuthLoading(true);
 
-    if (!active) return;
+    const { data, error } = await supabase.rpc(
+      "is_truemark_admin"
+    );
+
+    if (!active || version !== checkVersion) return;
 
     if (error || data !== true) {
       setAuthed(false);
-      setAuthError("This account is not authorized to access TrueMark.");
-    } else {
-      setAuthed(true);
-      setAuthError("");
+      setAuthError(
+        error
+          ? "Unable to verify administrator access. Please try again."
+          : "This account is not authorized to access TrueMark."
+      );
+
+      // Invalidate any pending checks before signing out.
+      ++checkVersion;
+
+      const { error: signOutError } =
+        await supabase.auth.signOut();
+
+      if (signOutError) {
+        console.error("Sign out failed:", signOutError.message);
+      }
+
+      if (active) setAuthLoading(false);
+      return;
     }
 
+    setAuthed(true);
+    setAuthError("");
     setAuthLoading(false);
   };
 
+  // Restore an existing session after a page refresh.
   supabase.auth.getSession().then(({ data, error }) => {
     if (!active) return;
+
     if (error) {
       setAuthed(false);
       setAuthLoading(false);
+      setAuthError("Unable to restore your session.");
       return;
     }
+
     checkAdmin(data.session);
   });
 
+  // Respond to login and logout events.
   const { data: listener } = supabase.auth.onAuthStateChange(
     (_event, session) => {
-      // Defer the database check outside the auth callback.
+      // Supabase recommends keeping async database calls
+      // outside the authentication callback.
       setTimeout(() => {
         if (active) checkAdmin(session);
       }, 0);
@@ -749,9 +779,11 @@ useEffect(() => {
 
   return () => {
     active = false;
+    ++checkVersion;
     listener.subscription.unsubscribe();
   };
 }, []);
+
 
   const [quoteName,setQuoteName]=useState("Spring Promo DTF Quote");
   const [customerName,setCustomerName]=useState("");
