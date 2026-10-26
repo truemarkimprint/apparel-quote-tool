@@ -415,27 +415,150 @@ function LineItemCard({ item, index, total, onChange, onRemove }) {
 }
 
 // ── Password Screen ───────────────────────────────────────────────────────────
-function PasswordScreen({onAuth}) {
-  const [pwInput,setPwInput]=useState(""); const [pwError,setPwError]=useState(false);
-  const attempt=()=>{ if(pwInput==="connect.Me!234") onAuth(); else setPwError(true); };
+
+function PasswordScreen({ onAuth }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const attempt = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const { data, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+
+      if (signInError) throw signInError;
+
+      if (!data.session) {
+        throw new Error("Unable to establish a login session.");
+      }
+
+      onAuth();
+    } catch (err) {
+      setError(err.message || "Unable to sign in.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div style={{minHeight:"100vh",background:TM.dark,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Georgia, serif"}}>
-      <div style={{background:TM.white,borderRadius:20,padding:44,boxShadow:"0 24px 80px rgba(0,0,0,0.4)",border:`3px solid ${TM.tan}`,width:360,textAlign:"center"}}>
-        <div style={{width:80,height:80,borderRadius:"50%",background:TM.dark,border:`3px solid ${TM.tan}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
-          <Shirt size={36} color={TM.tan}/>
+    <div style={{
+      minHeight: "100vh",
+      background: TM.dark,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "Georgia, serif"
+    }}>
+      <form onSubmit={attempt} style={{
+        background: TM.white,
+        borderRadius: 20,
+        padding: 44,
+        boxShadow: "0 24px 80px rgba(0,0,0,0.4)",
+        border: `3px solid ${TM.tan}`,
+        width: 360,
+        textAlign: "center"
+      }}>
+        <div style={{
+          width: 80,
+          height: 80,
+          borderRadius: "50%",
+          background: TM.dark,
+          border: `3px solid ${TM.tan}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          margin: "0 auto 20px"
+        }}>
+          <Shirt size={36} color={TM.tan} />
         </div>
-        <div style={{fontSize:11,fontWeight:700,letterSpacing:"0.15em",color:TM.muted,textTransform:"uppercase",marginBottom:4}}>TrueMark Imprint Co.</div>
-        <h2 style={{margin:"0 0 24px",fontSize:26,fontWeight:800,color:TM.dark,letterSpacing:"-0.02em"}}>Quote Tool</h2>
-        <label style={{...labelStyle,textAlign:"left",display:"block"}}>Password</label>
-        <input type="password" style={{...inputStyle,marginBottom:12,border:pwError?`1px solid ${TM.danger}`:`1px solid ${TM.border}`}}
-          value={pwInput} onChange={e=>{setPwInput(e.target.value);setPwError(false);}}
-          onKeyDown={e=>{if(e.key==="Enter")attempt();}} placeholder="Enter password" autoFocus/>
-        {pwError&&<div style={{color:TM.danger,fontSize:13,marginBottom:12,fontWeight:600}}>Incorrect password</div>}
-        <button onClick={attempt} style={{width:"100%",padding:"12px",borderRadius:8,border:"none",background:TM.dark,color:TM.tan,fontWeight:800,cursor:"pointer",fontSize:14,letterSpacing:"0.05em"}}>SIGN IN</button>
-      </div>
+
+        <div style={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "0.15em",
+          color: TM.muted,
+          textTransform: "uppercase",
+          marginBottom: 4
+        }}>
+          TrueMark Imprint Co.
+        </div>
+
+        <h2 style={{
+          margin: "0 0 24px",
+          fontSize: 26,
+          fontWeight: 800,
+          color: TM.dark
+        }}>
+          Quote Tool
+        </h2>
+
+        <label style={{ ...labelStyle, textAlign: "left", display: "block" }}>
+          Email
+        </label>
+        <input
+          type="email"
+          autoComplete="username"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email address"
+          style={{ ...inputStyle, marginBottom: 12 }}
+        />
+
+        <label style={{ ...labelStyle, textAlign: "left", display: "block" }}>
+          Password
+        </label>
+        <input
+          type="password"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          style={{ ...inputStyle, marginBottom: 12 }}
+        />
+
+        {error && (
+          <div style={{
+            color: TM.danger,
+            fontSize: 13,
+            marginBottom: 12,
+            fontWeight: 600
+          }}>
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            width: "100%",
+            padding: 12,
+            borderRadius: 8,
+            border: "none",
+            background: TM.dark,
+            color: TM.tan,
+            fontWeight: 800,
+            cursor: loading ? "wait" : "pointer",
+            fontSize: 14
+          }}
+        >
+          {loading ? "SIGNING IN..." : "SIGN IN"}
+        </button>
+      </form>
     </div>
   );
 }
+
 
 // ── Orders Drawer ─────────────────────────────────────────────────────────────
 function OrdersDrawer({open,onClose,onViewQuote}) {
